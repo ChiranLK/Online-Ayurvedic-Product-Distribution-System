@@ -63,7 +63,7 @@ restart.bat
 
 ## MongoDB Atlas Dashboard Access
 
-If you need access to the MongoDB Atlas dashboard, please contact the project administrator.
+If you need access to the MongoDB Atlas dashboard, please contact the project administrator which is mn pko.
 
 ## Security Note
 
