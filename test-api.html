@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>MongoDB Atlas Connection Test</h1>
+    <button id="testButton">Test Connection</button>
+    <div id="result"></div>
+
+    <script>
+        // Function to test the connection
+        async function testConnection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing connection...</p>';
+            
+            try {
+                console.log('Attempting to fetch from http://localhost:5000/api/health');
+                const response = await fetch('http://localhost:5000/api/health', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+                
+                console.log('Response received:', response);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Data received:', data);
+                
+                let html = '<h3>Result:</h3>';
+                html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                
+                if (data.mongodbConnected) {
+                    html += '<p style="color: green; font-weight: bold">✅ MongoDB Atlas is connected successfully!</p>';
+                } else {
+                    html += '<p style="color: red; font-weight: bold">❌ MongoDB Atlas connection failed!</p>';
+                }
+                
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `
+                    <h3>Error:</h3>
+                    <pre style="color: red">${error.toString()}</pre>
+                    <p>Common issues:</p>
+                    <ul>
+                        <li>Make sure the server is running on port 5000</li>
+                        <li>Check if CORS is properly configured on the server</li>
+                        <li>Ensure your browser allows cross-origin requests</li>
+                    </ul>
+                    <p>Open browser console (F12) for more details</p>
+                `;
+            }
+        }
+
+        // Add click event listener
+        document.getElementById('testButton').addEventListener('click', testConnection);
+        
+        // Automatically test on page load
+        window.onload = testConnection;
+    </script>
+</body>
+</html>

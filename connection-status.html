@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct MongoDB Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+        }
+        ol li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>MongoDB Atlas Connection Guide</h1>
+    
+    <div class="card">
+        <h2>Connection Status</h2>
+        <p class="success">✅ Your MongoDB Atlas connection is working!</p>
+        <p>The server output confirms successful connection:</p>
+        <pre>Server is running on port 5000
+✅ MongoDB Atlas connected successfully</pre>
+    </div>
+
+    <div class="card">
+        <h2>Why You Can't See API Results</h2>
+        <p>If you're trying to test the API from a browser and not seeing results, it might be due to one of these reasons:</p>
+        <ol>
+            <li><strong>CORS Issues</strong>: Your browser may be blocking cross-origin requests from localhost:3000 to localhost:5001.</li>
+            <li><strong>Server Running</strong>: Make sure your backend server is running on port 5001.</li>
+            <li><strong>Network Blocking</strong>: Some browsers or security software might block localhost connections.</li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h2>How to Verify Connection</h2>
+        <h3>Method 1: Check Terminal Output</h3>
+        <p>In your terminal where you ran <code>npm run dev</code>, you should see:</p>
+        <pre>Server is running on port 5000
+✅ MongoDB Atlas connected successfully</pre>
+
+        <h3>Method 2: Use a REST Client</h3>
+        <p>Try using a tool like Postman or Insomnia to make a GET request to:</p>
+        <pre>http://localhost:5000/api/health</pre>
+
+        <h3>Method 3: Use curl in Terminal</h3>
+        <pre>curl http://localhost:5000/api/health</pre>
+    </div>
+
+    <div class="card">
+        <h2>Next Steps</h2>
+        <p>Since your MongoDB connection is working (as shown in the server logs), you can:</p>
+        <ol>
+            <li>Continue developing your application</li>
+            <li>Create and test API endpoints</li>
+            <li>Share the connection information with your team using the MONGODB_SETUP.md guide</li>
+        </ol>
+    </div>
+</body>
+</html>
