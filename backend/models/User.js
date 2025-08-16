@@ -76,10 +76,12 @@ UserSchema.pre('save', async function(next) {
 // Sign JWT and return
 UserSchema.methods.getSignedJwtToken = function() {
   if (!process.env.JWT_SECRET) {
+    console.error('JWT_SECRET environment variable is not defined!');
     throw new Error('JWT_SECRET is not defined in environment variables');
   }
   
   try {
+    console.log('Generating JWT token for user:', { id: this._id, role: this.role });
     return jwt.sign(
       { id: this._id, role: this.role }, 
       process.env.JWT_SECRET, 

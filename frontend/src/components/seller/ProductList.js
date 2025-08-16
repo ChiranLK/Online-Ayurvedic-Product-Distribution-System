@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../../config/api';
 import { AuthContext } from '../../context/AuthContext';
+import { getFullImageUrl, handleImageError } from '../../utils/imageUtils';
 
 const ProductList = () => {
+  const navigate = useNavigate();
   const context = useContext(AuthContext);
   const { currentUser } = context || { currentUser: null };
   const [products, setProducts] = useState([]);
@@ -16,24 +18,25 @@ const ProductList = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('/api/seller/products');
-        setProducts(response.data);
+        const response = await api.get('/api/seller-products/my-products');
+        
+        const productsData = response.data.data || response.data;
+        setProducts(productsData);
         
         // Extract unique categories from products
-        const uniqueCategories = [...new Set(response.data.map(product => product.category))];
+        const uniqueCategories = [...new Set(productsData.map(product => product.category))];
         setCategories(uniqueCategories);
         
         setLoading(false);
       } catch (err) {
-        setError('Failed to fetch products');
+        setError('Failed to fetch products. Please make sure you are logged in as a seller.');
         setLoading(false);
         console.error('Error fetching products:', err);
       }
     };
 
-    // Use real API to fetch products
     fetchProducts();
-  }, [currentUser]);
+  }, []);
 
   const handleCategoryFilterChange = (e) => {
     setCategoryFilter(e.target.value);
@@ -55,13 +58,13 @@ const ProductList = () => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
         // Call API to delete product
-        await axios.delete(`/api/products/${productId}`);
+        await api.delete(`/api/seller-products/delete/${productId}`);
         
         // Update the UI by filtering out the deleted product
         setProducts(products.filter(product => product._id !== productId));
       } catch (err) {
         console.error('Error deleting product:', err);
-        alert('Failed to delete product');
+        alert('Failed to delete product: ' + (err.response?.data?.message || err.message));
       }
     }
   };
@@ -158,6 +161,17 @@ const ProductList = () => {
               <tr key={product._id}>
                 <td className="px-6 py-4">
                   <div className="flex items-center">
+                    <div className="h-10 w-10 flex-shrink-0">
+                      <img 
+                        className="h-10 w-10 rounded-full object-cover" 
+                        src={getFullImageUrl(product.imageUrl)} 
+                        alt={product.name} 
+                        onError={(e) => {
+                          console.log('Seller product list image failed to load:', e.target.src);
+                          handleImageError(e);
+                        }}
+                      />
+                    </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900">{product.name}</div>
                       <div className="text-sm text-gray-500">{product.description.substring(0, 50)}...</div>
@@ -187,7 +201,7 @@ const ProductList = () => {
                     <Link to={`/seller/products/${product._id}`} className="text-blue-600 hover:text-blue-900">
                       View
                     </Link>
-                    <Link to={`/seller/products/${product._id}/edit`} className="text-green-600 hover:text-green-900">
+                    <Link to={`/seller/products/edit/${product._id}`} className="text-green-600 hover:text-green-900">
                       Edit
                     </Link>
                     <button

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Product API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c7a41;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #2c7a41;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        #result {
+            margin-top: 20px;
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Seller Product API Test</h1>
+    
+    <form id="productForm">
+        <div class="form-group">
+            <label for="token">Authentication Token:</label>
+            <input type="text" id="token" name="token" placeholder="Bearer token..." />
+        </div>
+        
+        <div class="form-group">
+            <label for="name">Product Name:</label>
+            <input type="text" id="name" name="name" required />
+        </div>
+        
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" rows="4" required></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="price">Price (Rs):</label>
+            <input type="number" id="price" name="price" step="0.01" required />
+        </div>
+        
+        <div class="form-group">
+            <label for="category">Category:</label>
+            <select id="category" name="category" required>
+                <option value="">Select category...</option>
+                <option value="Herbal Medicines & Supplements">Herbal Medicines & Supplements</option>
+                <option value="Ayurvedic Beauty & Personal Care">Ayurvedic Beauty & Personal Care</option>
+                <option value="Hair Care">Hair Care</option>
+                <option value="Skin Care">Skin Care</option>
+                <option value="Oral Care">Oral Care</option>
+                <option value="Ayurvedic Nutrition & Health Drinks">Ayurvedic Nutrition & Health Drinks</option>
+                <option value="Pain Relief Oils & Balms">Pain Relief Oils & Balms</option>
+                <option value="Herbal Teas & Juices">Herbal Teas & Juices</option>
+                <option value="Home & Spiritual Care">Home & Spiritual Care</option>
+                <option value="Wellness & Lifestyle Products">Wellness & Lifestyle Products</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="stock">Stock:</label>
+            <input type="number" id="stock" name="stock" min="0" required />
+        </div>
+        
+        <div class="form-group">
+            <label for="image">Product Image:</label>
+            <input type="file" id="image" name="image" accept="image/*" required />
+        </div>
+        
+        <button type="button" id="testButton">Test Add Product API</button>
+        <button type="button" id="fetchButton">Test Get Products API</button>
+    </form>
+    
+    <div id="result">
+        <p>API response will appear here...</p>
+    </div>
+    
+    <script>
+        document.getElementById('testButton').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Sending request...</p>';
+            
+            try {
+                const form = document.getElementById('productForm');
+                const formData = new FormData();
+                
+                formData.append('name', document.getElementById('name').value);
+                formData.append('description', document.getElementById('description').value);
+                formData.append('price', document.getElementById('price').value);
+                formData.append('category', document.getElementById('category').value);
+                formData.append('stock', document.getElementById('stock').value);
+                
+                const imageFile = document.getElementById('image').files[0];
+                if (imageFile) {
+                    formData.append('image', imageFile);
+                }
+                
+                const token = document.getElementById('token').value;
+                
+                const response = await fetch('http://localhost:5000/api/seller-products/add', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': token
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red">Error: ${error.message}</p>`;
+            }
+        });
+        
+        document.getElementById('fetchButton').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Fetching products...</p>';
+            
+            try {
+                const token = document.getElementById('token').value;
+                
+                const response = await fetch('http://localhost:5000/api/seller-products/my-products', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red">Error: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

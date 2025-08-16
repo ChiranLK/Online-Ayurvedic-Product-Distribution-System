@@ -1,11 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { clearCart } from '../../utils/cartUtils';
+import { getFullImageUrl, handleImageError } from '../../utils/imageUtils';
+import { AuthContext } from '../../context/AuthContext';
+import api from '../../config/api';
 
 const Checkout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { cartItems, totalPrice } = location.state || { cartItems: [], totalPrice: 0 };
+  const { currentUser } = useContext(AuthContext);
+  
+  // Debug cart items and auth state
+  console.log('Checkout received cart items:', cartItems);
+  if (cartItems.length > 0) {
+    console.log('Sample item structure:', cartItems[0]);
+  }
+  
+  // Debug auth state
+  console.log('Auth state:', {
+    token: localStorage.getItem('token'),
+    userId: localStorage.getItem('userId'),
+    user: JSON.parse(localStorage.getItem('user') || 'null'),
+    currentUser
+  });
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -17,6 +35,17 @@ const Checkout = () => {
     zipCode: '',
     paymentMethod: 'cod'
   });
+  
+  // Populate form with user data if available
+  useEffect(() => {
+    if (currentUser) {
+      setFormData(prevData => ({
+        ...prevData,
+        fullName: currentUser.name || '',
+        email: currentUser.email || ''
+      }));
+    }
+  }, [currentUser]);
   
   const [errors, setErrors] = useState({});
   const [orderProcessing, setOrderProcessing] = useState(false);
@@ -105,34 +134,57 @@ const Checkout = () => {
     setOrderProcessing(true);
     
     try {
-      // In a real app, you would send this to your backend
-      // const response = await axios.post('http://localhost:5000/api/orders', {
-      //   items: cartItems.map(item => ({
-      //     productId: item._id,
-      //     name: item.name,
-      //     price: item.price,
-      //     quantity: item.quantity
-      //   })),
-      //   totalPrice,
-      //   customer: {
-      //     name: formData.fullName,
-      //     email: formData.email,
-      //     phone: formData.phone
-      //   },
-      //   shippingAddress: {
-      //     address: formData.address,
-      //     city: formData.city,
-      //     state: formData.state,
-      //     zipCode: formData.zipCode
-      //   },
-      //   paymentMethod: formData.paymentMethod
-      // });
+      console.log('Submitting order with data:', {
+        items: cartItems,
+        totalPrice,
+        customer: formData
+      });
       
-      // Simulate API call with timeout
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (!currentUser || !currentUser.id) {
+        console.error('No authenticated user found');
+        setErrors({
+          submit: 'You must be logged in to place an order. Please login and try again.'
+        });
+        setOrderProcessing(false);
+        return;
+      }
       
-      // Generate random order number
-      const randomOrderNumber = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+      const token = localStorage.getItem('token');
+      const userId = currentUser.id;
+      
+      console.log('Authentication info:', { 
+        token, 
+        userId, 
+        currentUser,
+        role: currentUser.role 
+      });
+      
+      // Prepare order data
+      const orderData = {
+        customerId: userId, // This will actually be overridden on the server with the ID from the token
+        items: cartItems.map(item => ({
+          // Make sure to properly extract the product ID from cart items
+          productId: item.product?._id || item._id,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        totalAmount: totalPrice,
+        deliveryAddress: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
+        paymentMethod: formData.paymentMethod
+      };
+      
+      console.log('Sending order data to backend:', orderData);
+      
+      // Send order data to the backend using api instance with authentication token
+      const response = await api.post('/api/orders', orderData);
+      
+      // Axios automatically throws an error if the request fails
+      // The response data is in response.data
+      const createdOrder = response.data;
+      console.log('Order created successfully:', createdOrder);
+      
+      // Generate order number based on the returned order ID
+      const randomOrderNumber = 'ORD-' + (createdOrder._id || Math.floor(100000 + Math.random() * 900000));
       setOrderNumber(randomOrderNumber);
       
       // Clear cart
@@ -144,10 +196,34 @@ const Checkout = () => {
       
     } catch (error) {
       console.error('Error processing order:', error);
+      
+      // Detailed error logging
+      if (error.response) {
+        console.error('Server response error:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+      } else if (error.request) {
+        console.error('No response received:', error.request);
+      } else {
+        console.error('Error setting up request:', error.message);
+      }
+      
+      // Check for authentication errors
+      if (error.response?.status === 401) {
+        // Auth error - token might be expired
+        setErrors({
+          submit: 'Your session has expired. Please login again to place your order.'
+        });
+      } else {
+        // Other errors
+        setErrors({
+          submit: `Failed to process your order: ${error.response?.data?.message || error.message || 'Unknown error'}`
+        });
+      }
+      
       setOrderProcessing(false);
-      setErrors({
-        submit: 'Failed to process your order. Please try again.'
-      });
     }
   };
 
@@ -208,12 +284,16 @@ const Checkout = () => {
                     <div className="h-12 w-12 flex-shrink-0 mr-4">
                       <img 
                         className="h-full w-full object-cover rounded" 
-                        src={item.imageUrl || 'https://via.placeholder.com/150'} 
-                        alt={item.name} 
+                        src={item.fullImageUrl || getFullImageUrl(item.product?.imageUrl || item.imageUrl)} 
+                        alt={item.name || item.product?.name} 
+                        onError={(e) => {
+                          console.log('Checkout image failed to load:', e.target.src);
+                          handleImageError(e);
+                        }}
                       />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                      <p className="text-sm font-medium text-gray-900">{item.name || item.product?.name}</p>
                       <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                     </div>
                   </div>

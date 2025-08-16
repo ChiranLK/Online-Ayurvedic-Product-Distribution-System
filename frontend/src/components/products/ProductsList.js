@@ -1,20 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect, useContext } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import api from '../../config/api';
+import predefinedCategories from '../../config/categories';
+import { getFullImageUrl, handleImageError } from '../../utils/imageUtils';
+import { AuthContext } from '../../context/AuthContext';
 
 const ProductsList = () => {
+  const { isAdmin, isSeller } = useContext(AuthContext);
+  const location = useLocation();
+  const queryParams = React.useMemo(() => {
+    return new URLSearchParams(location.search);
+  }, [location.search]);
+  const categoryFromUrl = queryParams.get('category');
+  
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState(categoryFromUrl || '');
   const [priceSort, setPriceSort] = useState('');
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         // Fetch from API
-        const response = await axios.get('/api/products');
+        const response = await api.get('/api/products');
         if (response.data && response.data.data) {
           setProducts(response.data.data);
         } else {
@@ -31,6 +41,12 @@ const ProductsList = () => {
     
     fetchProducts();
   }, []);
+  
+  // Update category filter when URL changes
+  useEffect(() => {
+    const category = queryParams.get('category');
+    setCategoryFilter(category || '');
+  }, [location.search, queryParams]);
 
   // Filter and sort products
   const filteredProducts = products.filter(product => {
@@ -47,8 +63,9 @@ const ProductsList = () => {
     return 0;
   });
 
-  // Get unique categories
-  const categories = [...new Set(products.map(product => product.category))];
+  // Add any unique categories from products that might not be in predefined list
+  const productCategories = [...new Set(products.map(product => product.category))];
+  const categories = [...new Set([...predefinedCategories, ...productCategories.filter(cat => cat)])]; // Filter out null/undefined
 
   if (loading) {
     return (
@@ -71,15 +88,17 @@ const ProductsList = () => {
     <div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-green-800">Products</h1>
-        <Link
-          to="/products/add"
-          className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg flex items-center"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-          </svg>
-          Add New Product
-        </Link>
+        {(isAdmin() || isSeller()) && (
+          <Link
+            to="/products/add"
+            className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg flex items-center"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+            </svg>
+            Add New Product
+          </Link>
+        )}
       </div>
 
       {/* Filters */}
@@ -146,9 +165,13 @@ const ProductsList = () => {
             <div key={product._id} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition">
               <Link to={`/products/${product._id}`}>
                 <img 
-                  src={product.imageUrl} 
+                  src={getFullImageUrl(product.imageUrl)} 
                   alt={product.name} 
                   className="w-full h-48 object-cover"
+                  onError={(e) => {
+                    console.log('Product list image failed to load:', e.target.src);
+                    handleImageError(e);
+                  }}
                 />
                 <div className="p-4">
                   <div className="flex justify-between items-start">
@@ -166,33 +189,35 @@ const ProductsList = () => {
                   </div>
                 </div>
               </Link>
-              <div className="p-4 pt-0 flex justify-between border-t mt-4">
-                <Link 
-                  to={`/products/edit/${product._id}`}
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  Edit
-                </Link>
-                <button 
-                  className="text-red-600 hover:text-red-800"
-                  onClick={async () => {
-                    if (window.confirm('Are you sure you want to delete this product?')) {
-                      try {
-                        await axios.delete(`/api/products/${product._id}`);
-                        // Update state after successful deletion
-                        setProducts(products.filter(p => p._id !== product._id));
-                        // Show success notification if needed
-                      } catch (err) {
-                        console.error('Error deleting product:', err);
-                        // Show error notification if needed
-                        alert('Failed to delete product. Please try again.');
+              {(isAdmin() || isSeller()) && (
+                <div className="p-4 pt-0 flex justify-between border-t mt-4">
+                  <Link 
+                    to={`/products/edit/${product._id}`}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    Edit
+                  </Link>
+                  <button 
+                    className="text-red-600 hover:text-red-800"
+                    onClick={async () => {
+                      if (window.confirm('Are you sure you want to delete this product?')) {
+                        try {
+                          await api.delete(`/api/products/${product._id}`);
+                          // Update state after successful deletion
+                          setProducts(products.filter(p => p._id !== product._id));
+                          // Show success notification if needed
+                        } catch (err) {
+                          console.error('Error deleting product:', err);
+                          // Show error notification if needed
+                          alert('Failed to delete product. Please try again.');
+                        }
                       }
-                    }
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

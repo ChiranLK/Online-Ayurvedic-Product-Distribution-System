@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const orderSchema = new mongoose.Schema({
   customerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Customer',
+    ref: 'User', // Changed from Customer to User to match authentication
     required: true
   },
   items: [{
@@ -40,6 +40,11 @@ const orderSchema = new mongoose.Schema({
   deliveryAddress: {
     type: String,
     required: true
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['cod', 'card'],
+    default: 'cod'
   }
 }, {
   timestamps: true

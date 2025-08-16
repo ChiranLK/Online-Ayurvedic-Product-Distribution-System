@@ -1,9 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../config/api';
 import { addToCart } from '../../utils/cartUtils';
+import { getFullImageUrl, handleImageError } from '../../utils/imageUtils';
+import { AuthContext } from '../../context/AuthContext';
+import { useModal } from '../../context/ModalContext';
 
 const ProductDetail = () => {
+  const { currentUser, token } = useContext(AuthContext);
+  const isAuthenticated = !!token;
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  const isSeller = currentUser && currentUser.role === 'seller';
+  const { openModal } = useModal();
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
@@ -16,7 +24,7 @@ const ProductDetail = () => {
     const fetchProductDetails = async () => {
       try {
         // Fetch product data from API
-        const productResponse = await axios.get(`/api/products/${id}`);
+        const productResponse = await api.get(`/api/products/${id}`);
         
         // Get the product data - handle different response structures
         const productData = productResponse.data.data || productResponse.data;
@@ -30,7 +38,7 @@ const ProductDetail = () => {
         // Fetch seller data if the product has a sellerId
         if (productData.sellerId) {
           try {
-            const sellerResponse = await axios.get(`/api/sellers/${productData.sellerId}`);
+            const sellerResponse = await api.get(`/api/sellers/${productData.sellerId}`);
             setSeller(sellerResponse.data.data || sellerResponse.data);
           } catch (sellerError) {
             console.error('Error fetching seller details:', sellerError);
@@ -50,10 +58,18 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     // Add to cart using cart utility function
-    addToCart(product._id, quantity);
+    const updatedCart = addToCart(product._id, quantity);
+    console.log('Added to cart:', updatedCart);
     
-    // Show notification
-    alert(`Added ${quantity} ${product.name} to cart!`);
+    // Show custom notification modal instead of browser alert
+    openModal({
+      title: 'Added to Cart',
+      message: `${quantity} ${product.name} ${quantity > 1 ? 'have' : 'has'} been added to your cart!`,
+      confirmText: 'View Cart',
+      cancelText: 'Continue Shopping',
+      type: 'success',
+      onConfirm: () => navigate('/cart')
+    });
   };
 
   if (loading) {
@@ -113,9 +129,13 @@ const ProductDetail = () => {
           {/* Product Image */}
           <div className="p-6">
             <img 
-              src={product.imageUrl} 
+              src={getFullImageUrl(product.imageUrl)} 
               alt={product.name} 
               className="w-full h-96 object-cover rounded-lg"
+              onError={(e) => {
+                console.log('Product detail image failed to load:', e.target.src);
+                handleImageError(e);
+              }}
             />
           </div>
           
@@ -194,28 +214,34 @@ const ProductDetail = () => {
           </div>
         )}
         
-        {/* Admin Actions */}
-        <div className="p-6 border-t bg-gray-50 flex justify-end space-x-4">
-          <Link 
-            to={`/products/edit/${product._id}`}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-          >
-            Edit Product
-          </Link>
-          <button 
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
-            onClick={() => {
-              if (window.confirm('Are you sure you want to delete this product?')) {
-                // In a real app, delete via API
-                // await axios.delete(`http://localhost:5000/api/products/${product._id}`);
-                console.log(`Delete product ${product._id}`);
-                navigate('/products');
-              }
-            }}
-          >
-            Delete Product
-          </button>
-        </div>
+        {/* Admin/Seller Actions */}
+        {(isAdmin || isSeller) && (
+          <div className="p-6 border-t bg-gray-50 flex justify-end space-x-4">
+            <Link 
+              to={`/products/edit/${product._id}`}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            >
+              Edit Product
+            </Link>
+            <button 
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
+              onClick={async () => {
+                if (window.confirm('Are you sure you want to delete this product?')) {
+                  // In a real app, delete via API
+                  try {
+                    await api.delete(`/api/products/${product._id}`);
+                    navigate('/products');
+                  } catch (error) {
+                    console.error('Error deleting product:', error);
+                    alert('Failed to delete product. Please try again.');
+                  }
+                }
+              }}
+            >
+              Delete Product
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -21,15 +21,28 @@ const Login = () => {
     setError('');
 
     try {
+      console.log('Attempting to login with email:', email);
       // Use AuthContext login function
       await login(email, password);
       
       // On successful login, navigate to dashboard or home
+      console.log('Login successful, redirecting to dashboard');
       navigate('/dashboard');
       
     } catch (err) {
-      // Error is handled by the AuthContext
+      // Detailed error logging
       console.error('Login error:', err);
+      
+      if (err.response) {
+        console.error('Server error response:', err.response.data);
+        setError(err.response.data.message || 'Invalid login credentials');
+      } else if (err.request) {
+        console.error('No response received:', err.request);
+        setError('Unable to reach server. Please check if the backend is running on port 5000.');
+      } else {
+        console.error('Error setting up request:', err.message);
+        setError(`Login failed: ${err.message}`);
+      }
     }
   };
 

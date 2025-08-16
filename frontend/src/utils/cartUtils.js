@@ -9,6 +9,7 @@
 export const addToCart = (productId, quantity = 1) => {
   // Get current cart from localStorage or initialize empty array
   const cart = JSON.parse(localStorage.getItem('ayurvedicCart')) || [];
+  console.log('Cart before update:', cart);
   
   // Check if product already exists in cart
   const existingItemIndex = cart.findIndex(item => item.productId === productId);
@@ -16,16 +17,20 @@ export const addToCart = (productId, quantity = 1) => {
   if (existingItemIndex >= 0) {
     // Update quantity if product exists
     cart[existingItemIndex].quantity += quantity;
+    console.log('Updated existing item in cart:', cart[existingItemIndex]);
   } else {
     // Add new item if product doesn't exist in cart
     cart.push({ productId, quantity });
+    console.log('Added new item to cart:', { productId, quantity });
   }
   
   // Save updated cart to localStorage
   localStorage.setItem('ayurvedicCart', JSON.stringify(cart));
+  console.log('Cart saved to localStorage:', JSON.stringify(cart));
   
   // Dispatch custom event to notify other components (like CartIcon) that cart has changed
   window.dispatchEvent(new Event('cartUpdated'));
+  console.log('cartUpdated event dispatched');
   
   return cart;
 };
