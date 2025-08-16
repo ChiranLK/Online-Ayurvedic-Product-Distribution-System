@@ -1,5 +1,7 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import './App.css';
+import { ModalProvider } from './context/ModalContext';
 
 // Components
 import Navbar from './components/layout/Navbar';
@@ -36,6 +38,10 @@ import SellerDetail from './components/sellers/SellerDetail';
 import SellerProfile from './components/seller/SellerProfile';
 import SellerProfileEdit from './components/seller/SellerProfileEdit';
 import SellerPasswordChange from './components/seller/SellerPasswordChange';
+import SellerProductList from './components/seller/ProductList';
+import SellerAddProduct from './components/seller/AddProduct';
+import SellerEditProduct from './components/seller/EditProduct';
+import SellerOrdersList from './components/seller/OrdersList';
 
 // Admin Components
 import AdminProfile from './components/admin/AdminProfile';
@@ -43,17 +49,38 @@ import AdminProfileEdit from './components/admin/AdminProfileEdit';
 import AdminPasswordChange from './components/admin/AdminPasswordChange';
 
 // Role-Based Routing
+import ProtectedRoute from './components/routing/ProtectedRoute';
 import PrivateRoute from './components/routing/PrivateRoute';
 import ProfileRedirect from './components/routing/ProfileRedirect';
 import Dashboard from './components/dashboard/Dashboard';
 import Unauthorized from './components/common/Unauthorized';
 
+// Import our custom welcome popup component
+import WelcomePopup from './components/common/WelcomePopup';
+
 function App() {
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  
+  useEffect(() => {
+    // Check if this is the first visit
+    const hasVisitedBefore = localStorage.getItem('hasVisitedBefore');
+    if (!hasVisitedBefore) {
+      // Show popup after a short delay for better UX
+      setTimeout(() => {
+        setShowWelcomePopup(true);
+        // Set flag in localStorage
+        localStorage.setItem('hasVisitedBefore', 'true');
+      }, 1000);
+    }
+  }, []);
+
   return (
     <Router>
-      <div className="flex flex-col min-h-screen">
+      <ModalProvider>
+        <div className="flex flex-col min-h-screen">
         <Navbar />
         <main className="flex-grow container mx-auto px-4 py-8">
+          {showWelcomePopup && <WelcomePopup onClose={() => setShowWelcomePopup(false)} />}
           <Routes>
             <Route path="/" element={<HomePage />} />
             
@@ -67,9 +94,9 @@ function App() {
             <Route path="/products" element={<ProductsList />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             
-            {/* Public Cart Routes */}
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
+            {/* Protected Cart Routes - redirects to login if not authenticated */}
+            <Route path="/cart" element={<ProtectedRoute roles="customer"><Cart /></ProtectedRoute>} />
+            <Route path="/checkout" element={<ProtectedRoute roles="customer"><Checkout /></ProtectedRoute>} />
 
             {/* Role-protected Routes */}
             
@@ -97,11 +124,11 @@ function App() {
               <Route path="/seller/profile" element={<SellerProfile />} />
               <Route path="/seller/profile/edit" element={<SellerProfileEdit />} />
               <Route path="/seller/profile/password" element={<SellerPasswordChange />} />
-              <Route path="/seller/products" element={<ProductsList />} />
+              <Route path="/seller/products" element={<SellerProductList />} />
+              <Route path="/seller/products/add" element={<SellerAddProduct />} />
+              <Route path="/seller/products/edit/:id" element={<SellerEditProduct />} />
               <Route path="/seller/products/:id" element={<ProductDetail />} />
-              <Route path="/seller/products/add" element={<AddProduct />} />
-              <Route path="/seller/products/edit/:id" element={<EditProduct />} />
-              <Route path="/seller/orders" element={<OrdersList />} />
+              <Route path="/seller/orders" element={<SellerOrdersList />} />
               <Route path="/seller/orders/:id" element={<OrderDetail />} />
             </Route>
             
@@ -126,6 +153,7 @@ function App() {
         </main>
         <Footer />
       </div>
+      </ModalProvider>
     </Router>
   );
 }

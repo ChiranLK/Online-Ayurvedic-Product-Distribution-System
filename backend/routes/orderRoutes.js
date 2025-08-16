@@ -1,15 +1,75 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
+const auth = require('../middleware/auth');
 
-// Create a new order
-router.post('/', async (req, res) => {
+// Create a new order (protected route)
+router.post('/', auth, async (req, res) => {
   try {
-    const order = new Order(req.body);
+    console.log('Received order data:', req.body);
+    
+    // Validate required fields
+    if (!req.body.customerId || !req.body.items || !req.body.totalAmount || !req.body.deliveryAddress) {
+      return res.status(400).json({ 
+        message: 'Missing required fields', 
+        requiredFields: ['customerId', 'items', 'totalAmount', 'deliveryAddress'],
+        received: {
+          customerId: req.body.customerId ? 'provided' : 'missing',
+          items: req.body.items ? `provided (${req.body.items.length} items)` : 'missing',
+          totalAmount: req.body.totalAmount ? 'provided' : 'missing',
+          deliveryAddress: req.body.deliveryAddress ? 'provided' : 'missing'
+        }
+      });
+    }
+    
+    // Get user ID from auth middleware
+    const userId = req.user._id;
+    console.log('Authenticated user ID:', userId);
+    console.log('Request body customerId:', req.body.customerId);
+    
+    // Validate user is ordering for themselves or is admin
+    if (req.user.role !== 'admin' && req.body.customerId && req.body.customerId !== userId.toString()) {
+      console.log('User attempted to place order for another customer');
+      return res.status(403).json({ 
+        message: 'You can only place orders for your own account' 
+      });
+    }
+    
+    // Format and validate product IDs
+    const formattedItems = req.body.items.map(item => {
+      // Ensure productId is a valid ObjectId
+      if (typeof item.productId === 'string' && !mongoose.Types.ObjectId.isValid(item.productId)) {
+        throw new Error(`Invalid productId format: ${item.productId}`);
+      }
+      
+      return {
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price
+      };
+    });
+    
+    // Create order with formatted items and use the authenticated user's ID as the customerId
+    // This ensures orders are always associated with the authenticated user
+    const orderData = {
+      ...req.body,
+      customerId: userId, // Use the authenticated user's ID from token
+      items: formattedItems
+    };
+    
+    console.log('Creating order with data:', orderData);
+    const order = new Order(orderData);
     await order.save();
+    console.log('Order saved successfully with ID:', order._id);
+    
     res.status(201).json(order);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error creating order:', error);
+    res.status(400).json({ 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'production' ? '🥞' : error.stack
+    });
   }
 });
 

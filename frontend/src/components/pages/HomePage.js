@@ -1,36 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect, useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../../config/api';
+import { AuthContext } from '../../context/AuthContext';
+import { getFullImageUrl, handleImageError } from '../../utils/imageUtils';
 
 const HomePage = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [popularProducts, setPopularProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { isAuthenticated, isCustomer } = useContext(AuthContext);
+  const navigate = useNavigate();
   
+
+
   useEffect(() => {
-    // Fetch featured products from the API
-    const fetchFeaturedProducts = async () => {
+    // Fetch products from the API
+    const fetchProducts = async () => {
       try {
-        const response = await axios.get('/api/products?featured=true');
+        const response = await api.get('/api/products');
+        
         // Check if response has the expected structure
         if (response.data && Array.isArray(response.data.data)) {
-          setFeaturedProducts(response.data.data);
-        } else if (Array.isArray(response.data)) {
-          setFeaturedProducts(response.data);
+          const products = response.data.data;
+          
+          // Get featured products (first 4)
+          setFeaturedProducts(products.slice(0, 4));
+          
+          // Get popular products (next 4, or random if not enough)
+          setPopularProducts(products.slice(4, 8));
         } else {
-          // Fallback if the response structure isn't as expected
           console.warn('Unexpected API response structure:', response);
           setFeaturedProducts([]);
+          setPopularProducts([]);
         }
         
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching featured products:', error);
+        console.error('Error fetching products:', error);
         setLoading(false);
       }
     };
     
-    fetchFeaturedProducts();
+    fetchProducts();
   }, []);
+  
+  const handleProductClick = (productId, event) => {
+    if (!isAuthenticated) {
+      event.preventDefault();
+      if (window.confirm('You need to log in to view product details. Would you like to log in now?')) {
+        // Pass the intended destination to redirect after login
+        navigate('/login', { state: { from: `/products/${productId}` } });
+      }
+      return;
+    }
+  };
   
   return (
     <div>
@@ -102,11 +125,15 @@ const HomePage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {featuredProducts.map((product) => (
               <div key={product._id} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition transform hover:-translate-y-1">
-                <Link to={`/products/${product._id}`}>
+                <Link 
+                  to={`/products/${product._id}`}
+                  onClick={(e) => handleProductClick(product._id, e)}
+                >
                   <img 
-                    src={product.imageUrl} 
+                    src={getFullImageUrl(product.imageUrl)} 
                     alt={product.name} 
                     className="w-full h-48 object-cover"
+                    onError={handleImageError}
                   />
                   <div className="p-4">
                     <h3 className="font-semibold text-lg text-gray-800 mb-2">{product.name}</h3>

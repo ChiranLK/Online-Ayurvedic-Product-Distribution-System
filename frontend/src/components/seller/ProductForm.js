@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../config/api';
+import predefinedCategories from '../../config/categories';
 
 const ProductForm = () => {
   const { id } = useParams();
@@ -15,9 +16,7 @@ const ProductForm = () => {
     stock: '',
     image: null
   });
-  const [categories, setCategories] = useState([
-    'Powders', 'Oils', 'Supplements', 'Herbs', 'Tonics', 'Capsules'
-  ]);
+  const [categories, setCategories] = useState(predefinedCategories);
   const [previewImage, setPreviewImage] = useState(null);
   
   const isEditMode = !!id;
@@ -25,7 +24,7 @@ const ProductForm = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get('/api/categories');
+        const response = await api.get('/api/categories');
         setCategories(response.data);
       } catch (err) {
         console.error('Error fetching categories:', err);
@@ -39,7 +38,7 @@ const ProductForm = () => {
       const fetchProduct = async () => {
         setIsLoading(true);
         try {
-          const response = await axios.get(`/api/seller/products/${id}`);
+          const response = await api.get(`/api/seller-products/product/${id}`);
           const product = response.data;
           setFormData({
             name: product.name,
@@ -140,14 +139,14 @@ const ProductForm = () => {
       let response;
       if (isEditMode) {
         // Update existing product
-        response = await axios.put(`/api/seller/products/${id}`, submitData, {
+        response = await api.put(`/api/seller-products/edit/${id}`, submitData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
         });
       } else {
         // Create new product
-        response = await axios.post('/api/seller/products', submitData, {
+        response = await api.post('/api/seller-products/add', submitData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }

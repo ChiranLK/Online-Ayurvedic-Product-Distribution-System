@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../config/api';
 
 const OrdersList = () => {
   const [orders, setOrders] = useState([]);
@@ -12,8 +12,8 @@ const OrdersList = () => {
     const fetchOrders = async () => {
       try {
         // Fetch orders from API
-        const response = await axios.get('/api/orders');
-        setOrders(response.data.orders || []);
+        const response = await api.get('/api/orders');
+        setOrders(response.data || []);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching orders:', error);

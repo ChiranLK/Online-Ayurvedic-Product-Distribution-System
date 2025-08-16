@@ -2,12 +2,17 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
 
 // Import routes
 const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const customerRoutes = require('./routes/customerRoutes');
 const sellerRoutes = require('./routes/sellerRoutes');
+const sellerProductRoutes = require('./routes/sellerProductRoutes');
+const sellerOrderRoutes = require('./routes/sellerOrderRoutes');
 const authRoutes = require('./routes/auth');
 
 const app = express();
@@ -16,6 +21,55 @@ const PORT = process.env.PORT || 5000; // Using the port from .env file (5000)
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)){
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: function(req, file, cb) {
+        cb(null, uploadsDir);
+    },
+    filename: function(req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 2 * 1024 * 1024 // 2MB limit
+    },
+    fileFilter: function(req, file, cb) {
+        const allowedTypes = /jpeg|jpg|png|gif/;
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = allowedTypes.test(file.mimetype);
+        if (extname && mimetype) {
+            return cb(null, true);
+        } else {
+            cb(new Error('Only image files are allowed!'));
+        }
+    }
+});
+
+// Serve static files from uploads directory with proper headers
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+    setHeaders: (res, path) => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET');
+        res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+        res.setHeader('Content-Type', 'image/jpeg'); // Default content type for images
+        res.setHeader('Vary', 'Accept-Encoding');
+    }
+}));
+
+// Log the uploads directory path for debugging
+console.log('Serving images from:', path.join(__dirname, 'uploads'));
 
 // Health check route to verify MongoDB connection
 app.get('/api/health', (req, res) => {
@@ -34,6 +88,8 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Static files route already configured above
+
 // Import profile routes
 const profileRoutes = require('./routes/profile');
 const sellerStatsRoutes = require('./routes/sellerStats');
@@ -45,6 +101,8 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/sellers', sellerRoutes);
+app.use('/api/seller-products', sellerProductRoutes);
+app.use('/api/seller-orders', sellerOrderRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/seller', sellerStatsRoutes);

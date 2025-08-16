@@ -97,8 +97,10 @@ const AuthProvider = ({ children }) => {
       
       const { token, user } = res.data;
       
-      // Save token to localStorage
+      // Save token and user info to localStorage
       localStorage.setItem('token', token);
+      localStorage.setItem('userId', user.id);
+      localStorage.setItem('user', JSON.stringify(user));
       setToken(token);
       setCurrentUser(user);
       
@@ -114,6 +116,9 @@ const AuthProvider = ({ children }) => {
   // Logout user
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('user');
+    localStorage.removeItem('customerId'); // Remove legacy storage
     setToken(null);
     setCurrentUser(null);
   };

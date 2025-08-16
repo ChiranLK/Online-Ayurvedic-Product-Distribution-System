@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../config/api';
+import { getFullImageUrl, handleImageError } from '../../utils/imageUtils';
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -17,8 +18,10 @@ const Cart = () => {
     try {
       // Get cart from local storage
       const cart = JSON.parse(localStorage.getItem('ayurvedicCart')) || [];
+      console.log('Cart from localStorage:', cart);
       
       if (cart.length === 0) {
+        console.log('Cart is empty');
         setCartItems([]);
         setLoading(false);
         return;
@@ -27,22 +30,50 @@ const Cart = () => {
       // Get product details for each cart item
       const productIds = cart.map(item => item.productId);
       const productDetailsPromises = productIds.map(id => 
-        axios.get(`http://localhost:5000/api/products/${id}`)
+        api.get(`/api/products/${id}`)
+          .catch(err => {
+            console.error(`Error fetching product with ID ${id}:`, err);
+            return { data: null }; // Return null data for products that can't be fetched
+          })
       );
       
       const responses = await Promise.all(productDetailsPromises);
-      const products = responses.map(response => response.data);
+      console.log('API responses:', responses);
       
-      // Combine cart quantities with product details
+      const products = responses.map(response => {
+          if (response && response.data && response.data.data) {
+            console.log('Response has nested data structure:', response.data);
+            return response.data.data; // Handle nested data structure
+          } else if (response && response.data) {
+            console.log('Response has direct data structure:', response.data);
+            return response.data; // Handle direct data structure
+          }
+          return null;
+        }).filter(product => product !== null);
+
+        console.log('Products fetched:', products);      // Combine cart quantities with product details
       const itemsWithDetails = cart.map(cartItem => {
-        const product = products.find(p => p._id === cartItem.productId);
+        const product = products.find(p => p && p._id === cartItem.productId);
+        if (!product) {
+          console.log('Product not found for ID:', cartItem.productId);
+          return null; // Skip this item if product not found
+        }
+        
+        // Log the product data to see the image URL structure
+        console.log('Product data:', product);
+        console.log('Image URL:', product.imageUrl);
+        const fullImageUrl = getFullImageUrl(product.imageUrl);
+        console.log('Full image URL:', fullImageUrl);
+        
         return {
           ...product,
+          imageUrl: product.imageUrl, // Ensure we have the imageUrl
+          fullImageUrl: fullImageUrl, // Store the full URL for direct access
           quantity: cartItem.quantity
         };
-      });
+      }).filter(item => item !== null); // Remove null items
       
-      setCartItems(itemsWithDetails);
+      console.log('Items with details:', itemsWithDetails);      setCartItems(itemsWithDetails);
       
       // Calculate total price
       const total = itemsWithDetails.reduce(
@@ -191,20 +222,31 @@ const Cart = () => {
               <tr key={item._id}>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="h-16 w-16 flex-shrink-0">
-                      <img 
-                        className="h-full w-full object-cover" 
-                        src={item.imageUrl || 'https://via.placeholder.com/150'} 
-                        alt={item.name} 
-                      />
+                    <div className="h-16 w-16 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
+                      {item.imageUrl ? (
+                        <img 
+                          className="h-full w-full object-cover" 
+                          src={item.fullImageUrl || getFullImageUrl(item.imageUrl)} 
+                          alt={item.name}
+                          onError={(e) => {
+                            console.log('Image failed to load:', e.target.src);
+                            handleImageError(e);
+                          }}
+                        />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center bg-gray-200 text-gray-400">
+                          <span className="text-xs">No image</span>
+                        </div>
+                      )}
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                      <div className="text-xs text-gray-500">{item.category}</div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">${item.price.toFixed(2)}</div>
+                  <div className="text-sm text-gray-900">${(item.price || 0).toFixed(2)}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-2">
@@ -225,7 +267,7 @@ const Cart = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">${(item.price * item.quantity).toFixed(2)}</div>
+                  <div className="text-sm text-gray-900">${((item.price || 0) * item.quantity).toFixed(2)}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button 
@@ -244,7 +286,7 @@ const Cart = () => {
       <div className="bg-gray-100 p-6 rounded-md mb-6">
         <div className="flex justify-between items-center mb-4">
           <span className="text-lg font-semibold">Subtotal:</span>
-          <span className="text-lg">${totalPrice.toFixed(2)}</span>
+          <span className="text-lg">${(totalPrice || 0).toFixed(2)}</span>
         </div>
         <p className="text-sm text-gray-600 mb-4">
           Shipping and taxes calculated at checkout

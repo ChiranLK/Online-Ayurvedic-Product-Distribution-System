@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { getFullImageUrl, handleImageError } from '../../utils/imageUtils';
 
 const Cart = () => {
   const [cart, setCart] = useState({
@@ -18,7 +19,18 @@ const Cart = () => {
         // Fetch cart data from API
         const response = await axios.get('/api/customer/cart');
         
+        console.log('Cart data received:', response.data);
+        
         if (response.data && response.data.items) {
+          // Log product image URLs for debugging
+          if (response.data.items.length > 0) {
+            console.log('First cart item:', response.data.items[0]);
+            if (response.data.items[0].product) {
+              console.log('Product image URL:', response.data.items[0].product.imageUrl);
+              console.log('Full image URL:', getFullImageUrl(response.data.items[0].product.imageUrl));
+            }
+          }
+          
           setCart(response.data);
         } else {
           // Initialize with empty cart if API doesn't return expected data
@@ -148,9 +160,13 @@ const Cart = () => {
                     <div className="flex flex-col sm:flex-row">
                       <div className="sm:w-24 sm:h-24 flex-shrink-0 mb-4 sm:mb-0">
                         <img
-                          src={item.product.imageUrl}
+                          src={getFullImageUrl(item.product.imageUrl)}
                           alt={item.product.name}
                           className="w-full h-full object-cover rounded"
+                          onError={(e) => {
+                            console.log('Customer cart image failed to load:', e.target.src);
+                            handleImageError(e);
+                          }}
                         />
                       </div>
                       <div className="flex-1 sm:ml-6">
