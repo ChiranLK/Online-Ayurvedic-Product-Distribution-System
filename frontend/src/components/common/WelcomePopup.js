@@ -36,8 +36,23 @@ const WelcomePopup = ({ onClose }) => {
           </p>
           
           <div className="mb-6 bg-green-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-green-700 mb-2">Today's Special Offer</h3>
+            <h3 className="font-semibold text-green-700 mb-2">Today's Special Offers</h3>
             <p className="text-sm text-gray-600 mb-2">
+              <span className="font-bold">🎉 New Customer Discount:</span> Use code <span className="font-mono bg-green-100 px-2 py-1 rounded">WELCOME20</span> for 20% off your first order!
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="bg-white p-2 rounded shadow-sm">
+                <p className="font-bold text-green-800">Triphala Churna</p>
+                <p className="text-xs text-gray-500">Rs.350 <span className="line-through">Rs.450</span></p>
+                <p className="text-xs text-red-500">22% Off</p>
+              </div>
+              <div className="bg-white p-2 rounded shadow-sm">
+                <p className="font-bold text-green-800">Brahmi Ghrita</p>
+                <p className="text-xs text-gray-500">Rs.520 <span className="line-through">Rs.650</span></p>
+                <p className="text-xs text-red-500">20% Off</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 mt-2">
               Get 15% off on your first order! Use code: <span className="font-bold">WELCOME15</span>
             </p>
             <div className="text-xs text-gray-500">*Terms and conditions apply</div>

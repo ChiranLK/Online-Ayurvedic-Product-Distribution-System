@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import api from '../../config/api';
 
 const SellerDetail = () => {
   const { id } = useParams();
@@ -11,62 +12,21 @@ const SellerDetail = () => {
 
   useEffect(() => {
     const fetchSellerDetails = async () => {
+      setLoading(true);
       try {
-        // In a real app, fetch from API
-        // const response = await axios.get(`http://localhost:5000/api/sellers/${id}`);
-        // setSeller(response.data);
+        // Fetch seller details from the API
+        const response = await api.get(`/api/admin/sellers/${id}`);
+        setSeller(response.data.data || response.data);
         
-        // Mock data
-        const mockSeller = {
-          _id: id,
-          name: 'Herbal Distributors Pvt Ltd',
-          email: 'sales@herbaldist.com',
-          phone: '0712345678',
-          address: 'No. 123, Main Street, Kurunegala, Sri Lanka',
-          contactPerson: 'Amara Perera',
-          registrationNumber: 'SL12345678',
-          productsSupplied: ['1', '5', '9'],
-          createdAt: '2023-05-10T09:30:00.000Z',
-          description: 'A leading distributor of Ayurvedic products in Sri Lanka with over 15 years of experience. Specializing in high-quality herbal preparations and traditional remedies.',
-          paymentTerms: 'Net 30 days',
-          rating: 4.8,
-          reviews: [
-            { id: 'r1', text: 'Excellent products and reliable delivery.', rating: 5, author: 'Customer 1', date: '2023-08-15T10:30:00.000Z' },
-            { id: 'r2', text: 'Good quality but sometimes delayed shipments.', rating: 4, author: 'Customer 2', date: '2023-09-22T14:15:00.000Z' },
-          ]
-        };
+        // Fetch products from this seller
+        try {
+          const productsResponse = await api.get(`/api/products?seller=${id}`);
+          setProducts(productsResponse.data.data || []);
+        } catch (err) {
+          console.error('Failed to fetch seller products:', err);
+          setProducts([]);
+        }
         
-        setSeller(mockSeller);
-        
-        // Mock products data
-        const mockProducts = [
-          {
-            _id: '1',
-            name: 'Ashwagandha Powder',
-            category: 'Herbal Supplements',
-            price: 2500,
-            quantity: 100,
-            image: 'https://images.unsplash.com/photo-1626198226928-99ef1ba1d285?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'
-          },
-          {
-            _id: '5',
-            name: 'Aloe Vera Gel',
-            category: 'Skin Care',
-            price: 1800,
-            quantity: 75,
-            image: 'https://images.unsplash.com/photo-1596046611348-7db3c12eac56?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'
-          },
-          {
-            _id: '9',
-            name: 'Neem Face Wash',
-            category: 'Skin Care',
-            price: 950,
-            quantity: 120,
-            image: 'https://images.unsplash.com/photo-1556228578-5f6c19ec7d98?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'
-          }
-        ];
-        
-        setProducts(mockProducts);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching seller details:', err);
@@ -81,11 +41,9 @@ const SellerDetail = () => {
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this seller? This action cannot be undone.')) {
       try {
-        // In a real app, delete via API
-        // await axios.delete(`http://localhost:5000/api/sellers/${id}`);
-        
-        console.log(`Deleting seller with ID: ${id}`);
-        navigate('/sellers');
+        // Delete seller via API
+        await api.delete(`/api/admin/sellers/${id}`);
+        navigate('/admin/sellers');
       } catch (err) {
         console.error('Error deleting seller:', err);
         setError('Failed to delete seller. Please try again later.');
@@ -107,7 +65,7 @@ const SellerDetail = () => {
       <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6">
         <p>{error}</p>
         <button 
-          onClick={() => navigate('/sellers')}
+          onClick={() => navigate('/admin/sellers')}
           className="mt-2 text-red-700 underline"
         >
           Return to sellers list
@@ -121,7 +79,7 @@ const SellerDetail = () => {
       <div className="bg-yellow-100 text-yellow-800 p-4 rounded-lg mb-6">
         <p>Seller not found. The requested seller may have been deleted or does not exist.</p>
         <button 
-          onClick={() => navigate('/sellers')}
+          onClick={() => navigate('/admin/sellers')}
           className="mt-2 text-yellow-800 underline"
         >
           Return to sellers list
@@ -135,7 +93,7 @@ const SellerDetail = () => {
       {/* Back Navigation */}
       <div className="mb-6">
         <Link
-          to="/sellers"
+          to="/admin/sellers"
           className="text-green-700 hover:text-green-900 flex items-center"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">

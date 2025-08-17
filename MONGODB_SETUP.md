@@ -1,6 +1,6 @@
 # MongoDB Atlas Connection Guide
 
-This guide explains how to connect to our MongoDB Atlas database for the Ayurvedic Product Distribution System.
+This guide explains how to connect to our MongoDB Atlas database for Ayura (formerly Ayurvedic Product Distribution System).
 
 ## For Team Members
 

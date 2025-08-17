@@ -1,24 +1,37 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
+import { ThemeContext } from '../../App';
 import CartIcon from '../cart/CartIcon';
 import categories from '../../config/categories';
 
 const Navbar = () => {
   const context = useContext(AuthContext);
   const { currentUser, token, logout } = context || { currentUser: null, token: null, logout: () => {} };
+  const { darkTheme, toggleTheme } = useContext(ThemeContext) || { darkTheme: false, toggleTheme: () => {} };
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isProductsDropdownOpen, setIsProductsDropdownOpen] = useState(false);
   const [mobileProductsOpen, setMobileProductsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Refs for detecting clicks outside the dropdowns
   const profileMenuRef = useRef(null);
   const productsDropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
+  const navigate = useNavigate();
   
   // Determine if user is authenticated based on token
   const isAuthenticated = !!token;
+  
+  // Handle search submit
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
+      setSearchTerm('');
+    }
+  };
   
   // Close dropdowns when clicking outside or pressing escape
   useEffect(() => {
@@ -64,7 +77,7 @@ const Navbar = () => {
     
     switch (currentUser?.role) {
       case 'admin':
-        return '/admin';
+        return '/admin/dashboard'; // Redirect to proper admin dashboard
       case 'seller':
         return '/seller';
       case 'customer':
@@ -87,13 +100,18 @@ const Navbar = () => {
     <nav className="bg-green-800 text-white">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
-          <Link to="/" className="text-xl font-bold flex items-center space-x-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 3.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM2.5 10a7.5 7.5 0 1115 0 7.5 7.5 0 01-15 0z" clipRule="evenodd" />
-              <path d="M10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6z" />
-              <path d="M10 14a1 1 0 100-2 1 1 0 000 2z" />
-            </svg>
-            <span>Ayurvedic Products</span>
+          <Link to="/" className="font-bold flex items-center space-x-2">
+            <img 
+              src={darkTheme 
+                ? "/images/home/ayurveda logo white.png" 
+                : "/images/home/ayurveda logo black.png"} 
+              alt="Ayura Logo"
+              className="h-10 w-auto"
+            />
+            <div className="flex flex-col">
+              <span className="text-xl font-bold leading-none">Ayura</span>
+              <span className="text-xs italic text-green-300">Ancient Healing for Modern Living</span>
+            </div>
           </Link>
           
           {/* Mobile Menu Button */}
@@ -130,6 +148,25 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-6 items-center">
             <Link to="/" className="hover:text-green-300 transition">Home</Link>
+            
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="flex">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-3 py-1 rounded-l border border-gray-300 focus:outline-none focus:ring-1 focus:ring-green-500 text-gray-800 w-40"
+              />
+              <button 
+                type="submit"
+                className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-r transition duration-200"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </form>
             
             {/* Products Dropdown */}
             <div className="relative" ref={productsDropdownRef}>
@@ -187,14 +224,22 @@ const Navbar = () => {
               </div>
             </div>
             
+            {/* Blog Link - Visible to all users */}
+            <Link
+              to="/blog"
+              className="hover:text-green-300 transition focus:outline-none focus:ring-2 focus:ring-green-300 focus:ring-opacity-50 rounded-md px-3 py-1 mx-1"
+            >
+              Blog
+            </Link>
+            
             {isAuthenticated ? (
               <>
                 {/* Admin Links */}
                 {currentUser?.role === 'admin' && (
                   <>
-                    <Link to="/admin/users" className="hover:text-green-300 transition">Users</Link>
-                    <Link to="/admin/products" className="hover:text-green-300 transition">Products</Link>
-                    <Link to="/admin/orders" className="hover:text-green-300 transition">Orders</Link>
+                    <Link to="/admin/users" className="hover:text-green-300 transition mx-1">Users</Link>
+                    <Link to="/admin/products" className="hover:text-green-300 transition mx-1">Products</Link>
+                    <Link to="/admin/orders" className="hover:text-green-300 transition mx-1">Orders</Link>
                   </>
                 )}
                 
@@ -314,6 +359,27 @@ const Navbar = () => {
           aria-hidden={!isMenuOpen}
           role="menu"
         >
+            {/* Mobile Search */}
+            <form onSubmit={(e) => { handleSearch(e); setIsMenuOpen(false); }} className="px-4 mb-3">
+              <div className="flex">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="flex-grow px-4 py-2 rounded-l border border-gray-300 focus:outline-none text-gray-800"
+                />
+                <button 
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-r transition duration-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
+              </div>
+            </form>
+
             <Link 
               to="/" 
               className="block py-2 px-4 hover:bg-green-600 transition duration-150"
@@ -376,6 +442,16 @@ const Navbar = () => {
                 ))}
               </div>
             </div>
+            
+            {/* Blog Link - Mobile */}
+            <Link
+              to="/blog"
+              className="block py-2 px-4 hover:bg-green-600 transition duration-150"
+              onClick={() => setIsMenuOpen(false)}
+              tabIndex={isMenuOpen ? 0 : -1}
+            >
+              Blog
+            </Link>
             
             {/* Authentication-dependent menu items */}
             {isAuthenticated ? (

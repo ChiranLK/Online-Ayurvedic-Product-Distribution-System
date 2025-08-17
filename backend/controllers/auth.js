@@ -34,9 +34,44 @@ exports.register = async (req, res) => {
     };
 
     try {
-      // Create user
+      // Create user in User collection
       const user = await User.create(userData);
       console.log('User created successfully:', user._id);
+      
+      // Create entry in Customer or Seller collection based on role
+      if (user.role === 'customer') {
+        const Customer = require('../models/Customer');
+        const customerData = {
+          userId: user._id,
+          name: user.name,
+          email: user.email,
+          password: user.password, // Already hashed by User model
+          phone: user.phone,
+          address: user.address,
+          city: user.city,
+          state: user.state,
+          zipcode: user.zipcode
+        };
+        
+        const newCustomer = await Customer.create(customerData);
+        console.log('Customer entry created:', newCustomer._id);
+      } else if (user.role === 'seller') {
+        const Seller = require('../models/Seller');
+        const sellerData = {
+          userId: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          address: user.address,
+          city: user.city,
+          state: user.state,
+          zipcode: user.zipcode,
+          status: user.status
+        };
+        
+        const newSeller = await Seller.create(sellerData);
+        console.log('Seller entry created:', newSeller._id);
+      }
       
       try {
         // Generate JWT token

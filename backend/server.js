@@ -22,6 +22,12 @@ const PORT = process.env.PORT || 5000; // Using the port from .env file (5000)
 app.use(cors());
 app.use(express.json());
 
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)){
@@ -95,6 +101,11 @@ const profileRoutes = require('./routes/profile');
 const sellerStatsRoutes = require('./routes/sellerStats');
 const customerStatsRoutes = require('./routes/customerStats');
 const adminStatsRoutes = require('./routes/adminStats');
+const adminSellersRoutes = require('./routes/adminSellers');
+const feedbackRoutes = require('./routes/feedback');
+const usersRoutes = require('./routes/users');
+const categoriesRoutes = require('./routes/categories');
+const blogRoutes = require('./routes/blog');
 
 // Routes
 app.use('/api/products', productRoutes);
@@ -107,7 +118,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/seller', sellerStatsRoutes);
 app.use('/api/customer', customerStatsRoutes);
-app.use('/api/admin', adminStatsRoutes);
+app.use('/api/admin/stats', adminStatsRoutes);  // Changed from /api/admin to /api/admin/stats for clarity
+app.use('/api/admin/users', usersRoutes);
+app.use('/api/admin/sellers', adminSellersRoutes);
+app.use('/api/feedback', feedbackRoutes);
+app.use('/api/categories', categoriesRoutes);
+app.use('/api/blog', blogRoutes);
 
 // MongoDB Connection
 console.log('Connecting to MongoDB...');

@@ -1,17 +1,22 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { ThemeContext } from '../../App';
 
 const Footer = () => {
+  const { darkTheme, toggleTheme } = useContext(ThemeContext) || { darkTheme: false, toggleTheme: () => {} };
   return (
     <footer className="bg-green-800 text-white mt-12">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <h3 className="text-lg font-semibold mb-4">About Us</h3>
-            <p className="text-sm">
-              We are dedicated to providing high-quality Ayurvedic products 
-              sourced from trusted sellers across the country.
-            </p>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/about" className="hover:text-green-300">About Us</Link></li>
+              <li><Link to="/vision" className="hover:text-green-300">Our Vision</Link></li>
+              <li><Link to="/contact" className="hover:text-green-300">Contact Us</Link></li>
+              <li><Link to="/faq" className="hover:text-green-300">FAQ</Link></li>
+              <li><Link to="/feedback" className="hover:text-green-300">Feedback</Link></li>
+            </ul>
           </div>
           
           <div>
@@ -45,8 +50,42 @@ const Footer = () => {
           </div>
         </div>
         
-        <div className="border-t border-green-700 mt-8 pt-6 text-center text-sm">
-          <p>&copy; {new Date().getFullYear()} Ayurvedic Product Distribution System. All rights reserved.</p>
+        <div className="border-t border-green-700 mt-8 pt-6 text-sm">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex items-center mb-4 md:mb-0">
+              {/* Theme Toggle Button */}
+              <div className="flex items-center">
+                <span className="mr-2 text-sm">Theme:</span>
+                <button 
+                  onClick={toggleTheme} 
+                  className="p-2 rounded-full hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300 transition-colors"
+                  aria-label={darkTheme ? "Switch to light mode" : "Switch to dark mode"}
+                >
+                  {darkTheme ? (
+                    <div className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-xs">Light Mode</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                      </svg>
+                      <span className="text-xs">Dark Mode</span>
+                    </div>
+                  )}
+                </button>
+              </div>
+            </div>
+                        <p className="text-center">&copy; {new Date().getFullYear()} Ayura. All rights reserved.</p>
+          </div>
+          <div className="flex justify-center space-x-4 mt-2">
+            <Link to="/terms" className="hover:text-green-300">Terms & Conditions</Link>
+            <Link to="/faq" className="hover:text-green-300">FAQ</Link>
+            <Link to="/feedback" className="hover:text-green-300">Feedback</Link>
+          </div>
         </div>
       </div>
     </footer>

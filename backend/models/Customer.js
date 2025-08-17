@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const customerSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   name: {
     type: String,
     required: true,
@@ -25,7 +29,23 @@ const customerSchema = new mongoose.Schema({
   address: {
     type: String,
     required: true
-  }
+  },
+  city: {
+    type: String,
+    trim: true
+  },
+  state: {
+    type: String,
+    trim: true
+  },
+  zipcode: {
+    type: String,
+    trim: true
+  },
+  orders: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Order'
+  }]
 }, {
   timestamps: true
 });

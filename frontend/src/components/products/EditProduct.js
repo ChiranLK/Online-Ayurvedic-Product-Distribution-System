@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../config/api';
+import { useModal } from '../../context/ModalContext';
 
 const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { openModal } = useModal();
   const [sellers, setSellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -23,8 +25,8 @@ const EditProduct = () => {
     const fetchProductAndSellers = async () => {
       try {
         // Fetch product data from API
-        const productResponse = await axios.get(`/api/products/${id}`);
-        const sellersResponse = await axios.get('/api/sellers');
+        const productResponse = await api.get(`/api/products/${id}`);
+        const sellersResponse = await api.get('/api/sellers');
         
         // Get the product data
         const productData = productResponse.data.data || productResponse.data;
@@ -73,31 +75,42 @@ const EditProduct = () => {
     setError('');
 
     try {
-      // For a real app, submit to API
-      // const updatedProduct = {
-      //   name,
-      //   description,
-      //   price: parseFloat(price),
-      //   category,
-      //   stock: parseInt(stock),
-      //   imageUrl,
-      //   sellerId
-      // };
+      // Prepare product data for update
+      const updatedProduct = {
+        name,
+        description,
+        price: parseFloat(price),
+        category,
+        stock: parseInt(stock),
+        imageUrl,
+        sellerId
+      };
       
-      // await axios.put(`http://localhost:5000/api/products/${id}`, updatedProduct);
+      // Submit to API
+      await api.put(`/api/products/${id}`, updatedProduct);
       
-      // For demo purposes
-      console.log('Updating product:', id, { name, description, price, category, stock, imageUrl, sellerId });
+      setSubmitting(false);
       
-      // Simulate API call
-      setTimeout(() => {
-        setSubmitting(false);
-        navigate(`/products/${id}`);
-      }, 1000);
+      // Show success modal
+      openModal({
+        title: 'Product Updated',
+        message: `${name} has been successfully updated.`,
+        type: 'success',
+        confirmText: 'OK',
+        onConfirm: () => navigate(`/admin/products/${id}`)
+      });
       
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update product. Please try again.');
       setSubmitting(false);
+      
+      // Show error modal
+      openModal({
+        title: 'Update Failed',
+        message: err.response?.data?.message || 'Failed to update product. Please try again.',
+        type: 'error',
+        confirmText: 'OK'
+      });
     }
   };
 
@@ -264,12 +277,33 @@ const EditProduct = () => {
             <button
               type="button"
               onClick={() => {
-                if (window.confirm('Are you sure you want to delete this product?')) {
-                  // In a real app, delete via API
-                  // await axios.delete(`http://localhost:5000/api/products/${id}`);
-                  console.log(`Delete product ${id}`);
-                  navigate('/products');
-                }
+                openModal({
+                  title: 'Delete Product',
+                  message: 'Are you sure you want to delete this product? This action cannot be undone.',
+                  type: 'warning',
+                  confirmText: 'Delete',
+                  cancelText: 'Cancel',
+                  onConfirm: async () => {
+                    try {
+                      await api.delete(`/api/products/${id}`);
+                      
+                      openModal({
+                        title: 'Product Deleted',
+                        message: 'The product has been successfully deleted.',
+                        type: 'success',
+                        confirmText: 'OK',
+                        onConfirm: () => navigate('/admin/products')
+                      });
+                    } catch (err) {
+                      openModal({
+                        title: 'Delete Failed',
+                        message: err.response?.data?.message || 'Failed to delete product. Please try again.',
+                        type: 'error',
+                        confirmText: 'OK'
+                      });
+                    }
+                  }
+                });
               }}
               className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg"
             >

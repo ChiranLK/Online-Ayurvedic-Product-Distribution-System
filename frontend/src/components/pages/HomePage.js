@@ -8,8 +8,27 @@ const HomePage = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [popularProducts, setPopularProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const { isAuthenticated, isCustomer } = useContext(AuthContext);
   const navigate = useNavigate();
+  
+  // Slideshow state
+  const slides = [
+    '/images/home/home img1.jpg',
+    '/images/home/home img2.jpg',
+    '/images/home/home img3.jpg',
+    '/images/home/home img4.jpg'
+  ];
+  const [currentSlide, setCurrentSlide] = useState(0);
+  
+  // Slideshow effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000); // Change slide every 5 seconds
+    
+    return () => clearInterval(interval);
+  }, [slides.length]);
   
 
 
@@ -55,6 +74,13 @@ const HomePage = () => {
     }
   };
   
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
+    }
+  };
+  
   return (
     <div>
       {/* Hero Section */}
@@ -64,6 +90,26 @@ const HomePage = () => {
             <h1 className="text-4xl md:text-5xl font-bold text-green-900 mb-6">
               Authentic Ayurvedic Products for Your Wellbeing
             </h1>
+            
+            {/* Search Form */}
+            <form onSubmit={handleSearch} className="mb-8">
+              <div className="flex">
+                <input
+                  type="text"
+                  placeholder="Search for products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="flex-grow px-4 py-2 rounded-l-lg border border-r-0 border-green-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+                <button 
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-r-lg transition duration-200"
+                >
+                  Search
+                </button>
+              </div>
+            </form>
+            
             <p className="text-lg text-gray-700 mb-8">
               Discover the ancient healing wisdom of Ayurveda through our premium quality products sourced directly from trusted suppliers.
             </p>
@@ -82,12 +128,31 @@ const HomePage = () => {
               </Link>
             </div>
           </div>
-          <div className="md:w-1/2">
-            <img 
-              src="https://images.unsplash.com/photo-1577175889968-f551f5944abd?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" 
-              alt="Ayurvedic products" 
-              className="rounded-lg shadow-xl"
-            />
+          <div className="md:w-1/2 relative">
+            <div className="relative h-[300px] md:h-[400px] overflow-hidden rounded-lg shadow-xl">
+              {slides.map((slide, index) => (
+                <img 
+                  key={index}
+                  src={slide} 
+                  alt={`Ayurvedic products ${index + 1}`}
+                  className={`absolute top-0 left-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
+                    index === currentSlide ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
+              ))}
+            </div>
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`h-2 w-2 rounded-full ${
+                    index === currentSlide ? 'bg-green-700' : 'bg-white bg-opacity-50'
+                  }`}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -245,6 +310,34 @@ const HomePage = () => {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Certifications and Approvals Section */}
+      <section className="mb-16 bg-gray-50 py-12 rounded-lg">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">Standard Certifications and Approvals</h2>
+          
+          <div className="flex flex-col md:flex-row gap-8 items-center">
+            <div className="md:w-1/2">
+              <p className="text-gray-700 text-lg leading-relaxed">
+                We are a Licensed Distributor of Sri Lanka Ayurvedic Drugs Corporation. 
+                Ayura branded products have obtained necessary approvals and 
+                standards including Ayurvedic Department Approval, ISO, HACCP, GMP and 
+                Organic Certification for relevant products.
+              </p>
+            </div>
+            
+            <div className="md:w-1/2 flex justify-center items-center">
+              {/* Single large certification image */}
+              <img 
+                src="/images/home/iso-22000.png" 
+                alt="Certifications and Approvals"
+                className="w-full max-w-lg h-auto object-contain py-4" 
+                style={{ minHeight: "250px" }}
+              />
+            </div>
+          </div>
         </div>
       </section>
     </div>

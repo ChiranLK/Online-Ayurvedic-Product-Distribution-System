@@ -27,6 +27,13 @@ const Login = () => {
       
       // On successful login, navigate to dashboard or home
       console.log('Login successful, redirecting to dashboard');
+      
+      // Check if this is the user's first login
+      if (!localStorage.getItem('hasLoggedInBefore')) {
+        localStorage.setItem('isFirstLogin', 'true');
+        localStorage.setItem('hasLoggedInBefore', 'true');
+      }
+      
       navigate('/dashboard');
       
     } catch (err) {

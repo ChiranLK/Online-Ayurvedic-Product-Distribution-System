@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../config/api';
 
 const SellersList = () => {
   const [sellers, setSellers] = useState([]);
@@ -11,59 +11,9 @@ const SellersList = () => {
   useEffect(() => {
     const fetchSellers = async () => {
       try {
-        // In a real app, fetch from API
-        // const response = await axios.get('http://localhost:5000/api/sellers');
-        // setSellers(response.data);
-        
-        // Mock data
-        setSellers([
-          {
-            _id: '101',
-            name: 'Herbal Distributors Pvt Ltd',
-            email: 'sales@herbaldist.com',
-            phone: '0712345678',
-            address: 'Kurunegala, Sri Lanka',
-            productsSupplied: ['1', '5'],
-            createdAt: '2023-05-10T09:30:00.000Z'
-          },
-          {
-            _id: '102',
-            name: 'Ayurveda Wellness Products',
-            email: 'info@ayurvedawellness.com',
-            phone: '0723456789',
-            address: 'Colombo, Sri Lanka',
-            productsSupplied: ['2', '7'],
-            createdAt: '2023-06-15T11:45:00.000Z'
-          },
-          {
-            _id: '103',
-            name: 'Natural Health Solutions',
-            email: 'contact@naturalhealthsl.com',
-            phone: '0734567890',
-            address: 'Kandy, Sri Lanka',
-            productsSupplied: ['3', '8'],
-            createdAt: '2023-04-20T10:15:00.000Z'
-          },
-          {
-            _id: '104',
-            name: 'Traditional Remedies Inc',
-            email: 'support@tradremedies.com',
-            phone: '0745678901',
-            address: 'Galle, Sri Lanka',
-            productsSupplied: ['4'],
-            createdAt: '2023-07-05T14:20:00.000Z'
-          },
-          {
-            _id: '105',
-            name: 'Green Leaf Herbs',
-            email: 'greenleaf@herbals.com',
-            phone: '0756789012',
-            address: 'Matara, Sri Lanka',
-            productsSupplied: ['6'],
-            createdAt: '2023-07-22T16:30:00.000Z'
-          }
-        ]);
-        
+        // Fetch from API
+        const response = await api.get('/api/sellers');
+        setSellers(response.data.data || []);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching sellers:', error);
@@ -223,13 +173,17 @@ const SellersList = () => {
                     </Link>
                     <button
                       className="text-red-600 hover:text-red-800"
-                      onClick={() => {
+                      onClick={async () => {
                         if (window.confirm('Are you sure you want to delete this seller?')) {
-                          // In a real app, delete via API
-                          // axios.delete(`http://localhost:5000/api/sellers/${seller._id}`);
-                          // Then update state
-                          // setSellers(sellers.filter(s => s._id !== seller._id));
-                          console.log(`Delete seller ${seller._id}`);
+                          try {
+                            // Delete seller via API
+                            await api.delete(`/api/sellers/${seller._id}`);
+                            // Then update state
+                            setSellers(sellers.filter(s => s._id !== seller._id));
+                          } catch (err) {
+                            console.error('Error deleting seller:', err);
+                            alert('Failed to delete seller. Please try again.');
+                          }
                         }
                       }}
                     >

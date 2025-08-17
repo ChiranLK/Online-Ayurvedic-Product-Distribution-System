@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../config/api';
 
 const CustomersList = () => {
   const [customers, setCustomers] = useState([]);
@@ -12,8 +12,8 @@ const CustomersList = () => {
     const fetchCustomers = async () => {
       try {
         // Fetch customers from API
-        const response = await axios.get('/api/customers');
-        setCustomers(response.data.customers || []);
+        const response = await api.get('/api/customers');
+        setCustomers(response.data || []);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching customers:', error);

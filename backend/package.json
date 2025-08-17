@@ -1,7 +1,7 @@
 {
   "name": "ayurvedic-product-distribution-backend",
   "version": "1.0.0",
-  "description": "Backend for Online Ayurvedic Product Distribution System",
+  "description": "Backend for Ayura - Ancient Healing for Modern Living",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
