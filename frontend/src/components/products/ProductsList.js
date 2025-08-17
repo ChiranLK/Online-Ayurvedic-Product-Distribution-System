@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import api from '../../config/api';
-import predefinedCategories from '../../config/categories';
 import { getFullImageUrl, handleImageError } from '../../utils/imageUtils';
 import { AuthContext } from '../../context/AuthContext';
 
@@ -12,13 +11,15 @@ const ProductsList = () => {
     return new URLSearchParams(location.search);
   }, [location.search]);
   const categoryFromUrl = queryParams.get('category');
+  const searchFromUrl = queryParams.get('search');
   
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(searchFromUrl || '');
   const [categoryFilter, setCategoryFilter] = useState(categoryFromUrl || '');
   const [priceSort, setPriceSort] = useState('');
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -42,17 +43,49 @@ const ProductsList = () => {
     fetchProducts();
   }, []);
   
-  // Update category filter when URL changes
+  // Update category filter and search term when URL changes
   useEffect(() => {
     const category = queryParams.get('category');
+    const search = queryParams.get('search');
     setCategoryFilter(category || '');
+    setSearchTerm(search || '');
   }, [location.search, queryParams]);
 
-  // Filter and sort products
+  // Fetch categories dynamically from the API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await api.get('/api/categories');
+        if (response.data && response.data.data) {
+          // Extract category names from the response
+          const categoryNames = response.data.data.map(category => category.name);
+          setCategories(categoryNames);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-green-700 border-opacity-50 mx-auto"></div>
+      </div>
+    );
+  }
+  
   const filteredProducts = products.filter(product => {
     return (
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (categoryFilter === '' || product.category === categoryFilter)
+      (categoryFilter === '' || 
+       (product.category && 
+        (typeof product.category === 'string' ? 
+          product.categoryName === categoryFilter : 
+          ((product.category && product.category.name === categoryFilter) ||
+           product.categoryName === categoryFilter))))
     );
   }).sort((a, b) => {
     if (priceSort === 'low') {
@@ -62,20 +95,7 @@ const ProductsList = () => {
     }
     return 0;
   });
-
-  // Add any unique categories from products that might not be in predefined list
-  const productCategories = [...new Set(products.map(product => product.category))];
-  const categories = [...new Set([...predefinedCategories, ...productCategories.filter(cat => cat)])]; // Filter out null/undefined
-
-  if (loading) {
-    return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-green-700 border-opacity-50 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading products...</p>
-      </div>
-    );
-  }
-
+  
   if (error) {
     return (
       <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6">
@@ -88,7 +108,7 @@ const ProductsList = () => {
     <div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-green-800">Products</h1>
-        {(isAdmin() || isSeller()) && (
+        {isSeller() && (
           <Link
             to="/products/add"
             className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg flex items-center"

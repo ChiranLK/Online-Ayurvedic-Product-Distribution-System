@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import ProfileEdit from '../common/ProfileEdit';
 import PasswordUpdate from '../common/PasswordUpdate';
+import AdminNavigation from './AdminNavigation';
+import api from '../../config/api';
 
 const AdminProfile = () => {
   const { currentUser } = useContext(AuthContext);
@@ -19,19 +21,24 @@ const AdminProfile = () => {
       if (!currentUser?._id) return;
 
       try {
-        // Make an API call to get real admin statistics
-        const response = await fetch('/api/admin/stats', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        console.log('Fetching admin stats from API...');
         
-        if (response.ok) {
-          const data = await response.json();
-          setStats(data.data);
-        } else {
-          console.error('Failed to fetch admin stats:', response.statusText);
-        }
+        // Log the current API base URL for debugging
+        console.log('API base URL:', api.defaults.baseURL);
+        
+        // Make an API call to get real admin statistics using the api instance
+        const response = await api.get('/api/admin/stats/');
+        
+        const data = response.data;
+        console.log('Admin Stats API Response:', data); // For debugging
+        
+        // Update stats with the correct API response structure
+        setStats({
+          users: (data.totalCustomers || 0) + (data.totalSellers || 0),
+          products: data.totalProducts || 0,
+          orders: data.totalOrders || 0,
+          pendingSellers: data.pendingSellers || 0
+        });
         
         setLoading(false);
       } catch (err) {
@@ -53,6 +60,8 @@ const AdminProfile = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      <AdminNavigation />
+      
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-green-800">Admin Profile</h1>
         <Link

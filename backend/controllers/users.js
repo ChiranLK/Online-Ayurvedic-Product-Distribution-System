@@ -160,8 +160,35 @@ exports.approveSeller = async (req, res) => {
       return res.status(400).json({ message: 'User is not a seller' });
     }
     
+    // Update User model
     user.isApproved = true;
+    user.status = 'approved';
     await user.save();
+    
+    // Update Seller model
+    const Seller = require('../models/Seller');
+    const seller = await Seller.findOne({ email: user.email });
+    
+    if (seller) {
+      seller.status = 'approved';
+      await seller.save();
+      console.log(`Seller ${seller._id} approved successfully`);
+    } else {
+      // Create seller entry if it doesn't exist
+      const newSeller = new Seller({
+        userId: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        address: user.address,
+        city: user.city,
+        state: user.state,
+        zipcode: user.zipcode,
+        status: 'approved'
+      });
+      await newSeller.save();
+      console.log(`New seller entry created for ${user.email}`);
+    }
     
     res.status(200).json({
       success: true,
@@ -170,7 +197,8 @@ exports.approveSeller = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        isApproved: user.isApproved
+        isApproved: user.isApproved,
+        status: user.status
       }
     });
   } catch (error) {

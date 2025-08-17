@@ -25,7 +25,9 @@ exports.getProducts = async (req, res) => {
       filter.sellerId = sellerId;
     }
     
-    const products = await Product.find(filter).populate('sellerId', 'name');
+    const products = await Product.find(filter)
+      .populate('sellerId', 'name')
+      .populate('category', 'name');
     
     res.status(200).json({
       success: true,
@@ -43,7 +45,9 @@ exports.getProducts = async (req, res) => {
 // @access  Public
 exports.getProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate('sellerId', 'name email phone address');
+    const product = await Product.findById(req.params.id)
+      .populate('sellerId', 'name email phone address')
+      .populate('category', 'name');
     
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });

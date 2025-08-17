@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
+import api from '../../config/api';
 
 const AdminDashboard = () => {
   const context = useContext(AuthContext);
@@ -21,22 +22,17 @@ const AdminDashboard = () => {
       try {
         // Get stats
         try {
-          const statsResponse = await fetch('/api/admin/stats');
-          if (statsResponse.ok) {
-            const data = await statsResponse.json();
-            setStats(data);
-          }
+          const statsResponse = await api.get('/api/admin/stats/');
+          console.log('Admin Dashboard Stats Response:', statsResponse.data);
+          setStats(statsResponse.data);
         } catch (error) {
           console.error('Error fetching stats:', error);
         }
 
         // Get recent orders
         try {
-          const ordersResponse = await fetch('/api/orders?limit=5');
-          if (ordersResponse.ok) {
-            const data = await ordersResponse.json();
-            setRecentOrders(data.data || []);
-          }
+          const ordersResponse = await api.get('/api/orders?limit=5');
+          setRecentOrders(ordersResponse.data.data || []);
         } catch (error) {
           console.error('Error fetching recent orders:', error);
         }
@@ -92,19 +88,19 @@ const AdminDashboard = () => {
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-sm font-medium text-gray-500 mb-2">Total Customers</h3>
           <p className="text-2xl font-bold text-gray-800">{stats.totalCustomers}</p>
-          <Link to="/admin/users?role=customer" className="text-sm text-green-600 mt-2 inline-block">View All</Link>
+          <Link to="/admin/customers" className="text-sm text-green-600 mt-2 inline-block">View All</Link>
         </div>
 
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-sm font-medium text-gray-500 mb-2">Total Sellers</h3>
           <p className="text-2xl font-bold text-gray-800">{stats.totalSellers}</p>
-          <Link to="/admin/users?role=seller" className="text-sm text-green-600 mt-2 inline-block">View All</Link>
+          <Link to="/admin/sellers" className="text-sm text-green-600 mt-2 inline-block">View All</Link>
         </div>
 
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-sm font-medium text-gray-500 mb-2">Pending Sellers</h3>
           <p className="text-2xl font-bold text-gray-800">{stats.pendingSellers}</p>
-          <Link to="/admin/pending-sellers" className="text-sm text-green-600 mt-2 inline-block">View All</Link>
+          <Link to="/admin/sellers?approval=pending" className="text-sm text-green-600 mt-2 inline-block">View All</Link>
         </div>
       </div>
 
@@ -160,7 +156,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Quick Links */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Admin Settings</h2>
           <ul className="space-y-2">
@@ -183,9 +179,6 @@ const AdminDashboard = () => {
               <Link to="/products" className="text-green-600 hover:underline">View All Products</Link>
             </li>
             <li>
-              <Link to="/products/add" className="text-green-600 hover:underline">Add New Product</Link>
-            </li>
-            <li>
               <Link to="/admin/categories" className="text-green-600 hover:underline">Manage Categories</Link>
             </li>
           </ul>
@@ -205,6 +198,21 @@ const AdminDashboard = () => {
             </li>
             <li>
               <Link to="/admin/users/add" className="text-green-600 hover:underline">Add New User</Link>
+            </li>
+          </ul>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Content Management</h2>
+          <ul className="space-y-2">
+            <li>
+              <Link to="/admin/faq" className="text-green-600 hover:underline">Manage FAQs</Link>
+            </li>
+            <li>
+              <Link to="/admin/feedback" className="text-green-600 hover:underline">Customer Feedback</Link>
+            </li>
+            <li>
+              <Link to="/admin/banner" className="text-green-600 hover:underline">Banner Management</Link>
             </li>
           </ul>
         </div>

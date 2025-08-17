@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, createContext } from 'react';
 import './App.css';
 import { ModalProvider } from './context/ModalContext';
 
@@ -28,6 +28,10 @@ import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import SellerRegister from './components/auth/SellerRegister';
 
+// Blog Components
+import BlogList from './components/blog/BlogList';
+import BlogDetail from './components/blog/BlogDetail';
+
 // Cart Components
 import Cart from './components/cart/Cart';
 import Checkout from './components/cart/Checkout';
@@ -44,9 +48,30 @@ import SellerEditProduct from './components/seller/EditProduct';
 import SellerOrdersList from './components/seller/OrdersList';
 
 // Admin Components
+import AdminDashboard from './components/dashboard/AdminDashboard';
 import AdminProfile from './components/admin/AdminProfile';
 import AdminProfileEdit from './components/admin/AdminProfileEdit';
 import AdminPasswordChange from './components/admin/AdminPasswordChange';
+import AdminFaqManager from './components/admin/FaqManager';
+import AdminFeedbackManager from './components/admin/FeedbackManager';
+import AdminUserList from './components/admin/AdminUserList';
+import AdminUserDetail from './components/admin/AdminUserDetail';
+import AdminUserEdit from './components/admin/AdminUserEdit';
+import AdminCustomersList from './components/admin/AdminCustomersList';
+import AdminSellersList from './components/admin/AdminSellersList';
+import AdminOrdersList from './components/admin/AdminOrdersList';
+import AdminCategories from './components/admin/AdminCategories';
+import AdminUserAdd from './components/admin/AdminUserAdd';
+import AdminBlogList from './components/admin/AdminBlogList';
+import AdminBlogForm from './components/admin/AdminBlogForm';
+
+// Company and Legal Pages
+import AboutUsPage from './components/pages/company/AboutUsPage';
+import ContactUsPage from './components/pages/company/ContactUsPage';
+import VisionPage from './components/pages/company/VisionPage';
+import FaqPage from './components/pages/company/FaqPage';
+import FeedbackPage from './components/pages/company/FeedbackPage';
+import TermsAndConditionsPage from './components/pages/legal/TermsAndConditionsPage';
 
 // Role-Based Routing
 import ProtectedRoute from './components/routing/ProtectedRoute';
@@ -58,8 +83,37 @@ import Unauthorized from './components/common/Unauthorized';
 // Import our custom welcome popup component
 import WelcomePopup from './components/common/WelcomePopup';
 
+// Create context after all imports
+export const ThemeContext = createContext();
+
 function App() {
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  const [darkTheme, setDarkTheme] = useState(() => {
+    // Check if user has saved theme preference
+    const savedTheme = localStorage.getItem('darkTheme');
+    // If preference exists, use it; otherwise check system preference
+    if (savedTheme !== null) {
+      return JSON.parse(savedTheme);
+    }
+    // Check if system prefers dark mode
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+  
+  // Set theme class on body element
+  useEffect(() => {
+    if (darkTheme) {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
+    }
+    // Save theme preference
+    localStorage.setItem('darkTheme', JSON.stringify(darkTheme));
+  }, [darkTheme]);
+  
+  // Toggle theme function
+  const toggleTheme = () => {
+    setDarkTheme(!darkTheme);
+  };
   
   useEffect(() => {
     // Check if this is the first visit
@@ -72,14 +126,39 @@ function App() {
         localStorage.setItem('hasVisitedBefore', 'true');
       }, 1000);
     }
+    
+    // Also check for first login
+    const handleStorageChange = () => {
+      // Check if user just logged in for the first time
+      const isFirstLogin = localStorage.getItem('isFirstLogin');
+      const token = localStorage.getItem('token');
+      
+      if (token && isFirstLogin === 'true') {
+        setTimeout(() => {
+          setShowWelcomePopup(true);
+          // Reset the first login flag
+          localStorage.setItem('isFirstLogin', 'false');
+        }, 1000);
+      }
+    };
+    
+    // Add event listener for storage changes
+    window.addEventListener('storage', handleStorageChange);
+    // Also check on initial load
+    handleStorageChange();
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   return (
     <Router>
-      <ModalProvider>
-        <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-grow container mx-auto px-4 py-8">
+      <ThemeContext.Provider value={{ darkTheme, toggleTheme }}>
+        <ModalProvider>
+          <div className={`flex flex-col min-h-screen ${darkTheme ? 'dark' : ''}`}>
+            <Navbar />
+            <main className="flex-grow container mx-auto px-4 py-8">
           {showWelcomePopup && <WelcomePopup onClose={() => setShowWelcomePopup(false)} />}
           <Routes>
             <Route path="/" element={<HomePage />} />
@@ -94,6 +173,14 @@ function App() {
             <Route path="/products" element={<ProductsList />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             
+            {/* Company and Legal Pages */}
+            <Route path="/about" element={<AboutUsPage />} />
+            <Route path="/contact" element={<ContactUsPage />} />
+            <Route path="/vision" element={<VisionPage />} />
+            <Route path="/faq" element={<FaqPage />} />
+            <Route path="/feedback" element={<FeedbackPage />} />
+            <Route path="/terms" element={<TermsAndConditionsPage />} />
+            
             {/* Protected Cart Routes - redirects to login if not authenticated */}
             <Route path="/cart" element={<ProtectedRoute roles="customer"><Cart /></ProtectedRoute>} />
             <Route path="/checkout" element={<ProtectedRoute roles="customer"><Checkout /></ProtectedRoute>} />
@@ -102,20 +189,31 @@ function App() {
             
             {/* Admin Routes */}
             <Route element={<PrivateRoute allowedRoles={['admin']} />}>
-              <Route path="/admin" element={<Dashboard />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/profile" element={<AdminProfile />} />
               <Route path="/admin/profile/edit" element={<AdminProfileEdit />} />
               <Route path="/admin/profile/password" element={<AdminPasswordChange />} />
               <Route path="/admin/products" element={<ProductsList />} />
-              <Route path="/admin/products/:id" element={<ProductDetail />} />
-              <Route path="/admin/products/add" element={<AddProduct />} />
               <Route path="/admin/products/edit/:id" element={<EditProduct />} />
-              <Route path="/admin/customers" element={<CustomersList />} />
+              <Route path="/admin/products/:id" element={<ProductDetail />} />
+              <Route path="/admin/users" element={<AdminUserList />} />
+              <Route path="/admin/users/edit/:id" element={<AdminUserEdit />} />
+              <Route path="/admin/users/:id" element={<AdminUserDetail />} />
+              <Route path="/admin/customers" element={<AdminCustomersList />} />
               <Route path="/admin/customers/:id" element={<CustomerDetail />} />
-              <Route path="/admin/sellers" element={<SellersList />} />
+              <Route path="/admin/sellers/pending" element={<AdminSellersList approvalFilter="pending" />} />
               <Route path="/admin/sellers/:id" element={<SellerDetail />} />
-              <Route path="/admin/orders" element={<OrdersList />} />
+              <Route path="/admin/sellers" element={<AdminSellersList />} />
+              <Route path="/admin/orders" element={<AdminOrdersList />} />
               <Route path="/admin/orders/:id" element={<OrderDetail />} />
+              <Route path="/admin/faq" element={<AdminFaqManager />} />
+              <Route path="/admin/feedback" element={<AdminFeedbackManager />} />
+              <Route path="/admin/categories" element={<AdminCategories />} />
+              <Route path="/admin/users/add" element={<AdminUserAdd />} />
+              <Route path="/admin/blog" element={<AdminBlogList />} />
+              <Route path="/admin/blog/new" element={<AdminBlogForm />} />
+              <Route path="/admin/blog/edit/:id" element={<AdminBlogForm />} />
             </Route>
             
             {/* Seller Routes */}
@@ -144,6 +242,10 @@ function App() {
               <Route path="/customer/checkout" element={<Checkout />} />
             </Route>
             
+            {/* Public Blog Routes */}
+            <Route path="/blog" element={<BlogList />} />
+            <Route path="/blog/:id" element={<BlogDetail />} />
+            
             {/* Dashboard route for any authenticated user */}
             <Route element={<PrivateRoute allowedRoles={['admin', 'seller', 'customer']} />}>
               <Route path="/dashboard" element={<Dashboard />} />
@@ -152,8 +254,9 @@ function App() {
           </Routes>
         </main>
         <Footer />
-      </div>
-      </ModalProvider>
+          </div>
+        </ModalProvider>
+      </ThemeContext.Provider>
     </Router>
   );
 }

@@ -94,29 +94,35 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
       description: req.body.description,
       price: req.body.price,
       category: req.body.category,
+      categoryName: req.body.categoryName,
       stock: req.body.stock,
-      sellerId: req.user.id, // Use the authenticated seller's ID
-      imageUrl: req.file ? `/uploads/${req.file.filename}` : null
+      sellerId: req.user.id, // Seller can only create products for themselves
+      imageUrl: req.file ? `/uploads/${req.file.filename}` : req.body.imageUrl // Allow URL or file upload
     };
 
     if (!productData.imageUrl) {
-      return res.status(400).json({ message: 'Product image is required' });
+      return res.status(400).json({ message: 'Product image URL or file is required' });
     }
 
     const product = new Product(productData);
     const savedProduct = await product.save();
 
-    // Update the seller's productsSupplied array
-    await Seller.findByIdAndUpdate(
-      req.user.id,
-      { $push: { productsSupplied: savedProduct._id } },
-      { new: true }
-    );
+    // If it's a seller creating the product, update their productsSupplied array
+    if (req.user.role === 'seller') {
+      await Seller.findByIdAndUpdate(
+        req.user.id,
+        { $push: { productsSupplied: savedProduct._id } },
+        { new: true }
+      );
+    }
 
-    res.status(201).json(savedProduct);
+    res.status(201).json({
+      success: true,
+      data: savedProduct
+    });
   } catch (error) {
     console.error('Create product error:', error);
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 });
 

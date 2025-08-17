@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../config/api';
+import { useModal } from '../../context/ModalContext';
 
 const ProductList = () => {
+  const { openModal } = useModal();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,16 +18,20 @@ const ProductList = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('/api/admin/products');
-        const productsData = response.data;
+        const response = await api.get('/api/products');
+        const productsData = response.data.data || [];
         setProducts(productsData);
         
         // Extract unique categories
-        const uniqueCategories = [...new Set(productsData.map(product => product.category))];
+        const uniqueCategories = [...new Set(productsData
+          .filter(product => product.category)
+          .map(product => product.category))];
         setCategories(uniqueCategories);
         
         // Extract unique sellers
-        const uniqueSellers = [...new Set(productsData.map(product => product.sellerId?.name))];
+        const uniqueSellers = [...new Set(productsData
+          .filter(product => product.sellerId && product.sellerId.name)
+          .map(product => product.sellerId.name))];
         setSellers(uniqueSellers);
         
         setLoading(false);
@@ -36,19 +42,11 @@ const ProductList = () => {
       }
     };
 
-    // Mock data for demonstration
+    // Uncomment to use real API
+    // fetchProducts();
+    
+    // Using mock data for now
     const mockProducts = [
-      {
-        _id: '1',
-        name: 'Ashwagandha Powder',
-        description: 'Organic Ashwagandha Root Powder',
-        price: 450,
-        category: 'Powders',
-        stock: 28,
-        sellerId: { _id: 's1', name: 'Ayur Herbs' },
-        isApproved: true,
-        createdAt: '2023-07-10T10:30:00'
-      },
       {
         _id: '2',
         name: 'Triphala Churna',
@@ -140,34 +138,72 @@ const ProductList = () => {
     return matchesCategory && matchesSeller && matchesStatus && matchesSearch;
   });
 
-  const toggleProductApproval = async (productId, isCurrentlyApproved) => {
+  const toggleProductApproval = async (productId, isCurrentlyApproved, productName) => {
     try {
-      // In a real application, this would be an API call
-      // await axios.put(`/api/admin/products/${productId}/approval`, { isApproved: !isCurrentlyApproved });
+      // Call the API to update product approval status
+      await api.put(`/api/products/${productId}/approval`, { isApproved: !isCurrentlyApproved });
       
-      // For demo, we'll just update the local state
+      // Update the local state after successful API call
       setProducts(products.map(product => 
         product._id === productId ? { ...product, isApproved: !isCurrentlyApproved } : product
       ));
+      
+      // Show success modal
+      openModal({
+        title: isCurrentlyApproved ? 'Product Unapproved' : 'Product Approved',
+        message: `${productName} has been ${isCurrentlyApproved ? 'unapproved' : 'approved'} successfully.`,
+        type: 'success',
+        confirmText: 'OK'
+      });
     } catch (err) {
       console.error('Error updating product approval status:', err);
-      alert('Failed to update product approval status');
+      
+      // Show error modal
+      openModal({
+        title: 'Action Failed',
+        message: err.response?.data?.message || 'Failed to update product approval status.',
+        type: 'error',
+        confirmText: 'OK'
+      });
     }
   };
 
-  const handleDeleteProduct = async (productId) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      try {
-        // In a real application, this would be an API call
-        // await axios.delete(`/api/admin/products/${productId}`);
-        
-        // For demo, we'll just update the local state
-        setProducts(products.filter(product => product._id !== productId));
-      } catch (err) {
-        console.error('Error deleting product:', err);
-        alert('Failed to delete product');
+  const handleDeleteProduct = async (productId, productName) => {
+    // Show confirmation modal
+    openModal({
+      title: 'Delete Product',
+      message: `Are you sure you want to delete "${productName}"? This action cannot be undone.`,
+      type: 'warning',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          // Call the API to delete the product
+          await api.delete(`/api/products/${productId}`);
+          
+          // Update the local state after successful API call
+          setProducts(products.filter(product => product._id !== productId));
+          
+          // Show success modal
+          openModal({
+            title: 'Product Deleted',
+            message: `${productName} has been deleted successfully.`,
+            type: 'success',
+            confirmText: 'OK'
+          });
+        } catch (err) {
+          console.error('Error deleting product:', err);
+          
+          // Show error modal
+          openModal({
+            title: 'Delete Failed',
+            message: err.response?.data?.message || 'Failed to delete product. Please try again.',
+            type: 'error',
+            confirmText: 'OK'
+          });
+        }
       }
-    }
+    });
   };
 
   if (loading) {
@@ -190,12 +226,7 @@ const ProductList = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Product Management</h1>
-        <Link
-          to="/admin/products/add"
-          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-        >
-          Add New Product
-        </Link>
+        {/* Add New Product button removed - Admins can only edit existing products */}
       </div>
 
       {/* Filters */}
@@ -334,7 +365,7 @@ const ProductList = () => {
                       Edit
                     </Link>
                     <button
-                      onClick={() => toggleProductApproval(product._id, product.isApproved)}
+                      onClick={() => toggleProductApproval(product._id, product.isApproved, product.name)}
                       className={`${
                         product.isApproved ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'
                       }`}
@@ -342,7 +373,7 @@ const ProductList = () => {
                       {product.isApproved ? 'Unapprove' : 'Approve'}
                     </button>
                     <button
-                      onClick={() => handleDeleteProduct(product._id)}
+                      onClick={() => handleDeleteProduct(product._id, product.name)}
                       className="text-red-600 hover:text-red-900"
                     >
                       Delete

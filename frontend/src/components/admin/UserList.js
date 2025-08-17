@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../config/api';
+import { ModalContext } from '../../context/ModalContext';
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -8,11 +9,26 @@ const UserList = () => {
   const [error, setError] = useState(null);
   const [roleFilter, setRoleFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const { openModal } = useContext(ModalContext);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('/api/admin/users');
+        // Get the URL search params to check if we should filter by role
+        const urlParams = new URLSearchParams(window.location.search);
+        const roleParam = urlParams.get('role');
+        
+        // If role param exists, set it in the state
+        if (roleParam) {
+          setRoleFilter(roleParam);
+        }
+
+        // Construct API URL with role filter if needed
+        const apiUrl = roleParam 
+          ? `/api/admin/users?role=${roleParam}` 
+          : '/api/admin/users';
+        
+        const response = await api.get(apiUrl);
         setUsers(response.data.data || []);
         setLoading(false);
       } catch (err) {
@@ -42,19 +58,46 @@ const UserList = () => {
     return matchesRole && matchesSearch;
   });
 
-  const toggleUserStatus = async (userId, currentStatus) => {
-    try {
-      // In a real application, this would be an API call
-      // await axios.put(`/api/admin/users/${userId}`, { isActive: !currentStatus });
-      
-      // For demo, we'll just update the local state
-      setUsers(users.map(user => 
-        user._id === userId ? { ...user, isActive: !currentStatus } : user
-      ));
-    } catch (err) {
-      console.error('Error updating user status:', err);
-      alert('Failed to update user status');
-    }
+  const toggleUserStatus = async (userId, currentStatus, userName = 'User') => {
+    const newStatus = !currentStatus;
+    const action = newStatus ? 'activate' : 'deactivate';
+    
+    openModal({
+      title: `${action.charAt(0).toUpperCase() + action.slice(1)} User`,
+      message: `Are you sure you want to ${action} ${userName}?`,
+      type: 'warning',
+      confirmText: 'Yes, Continue',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          // Call the API to update the user's status
+          await api.put(`/api/admin/users/${userId}`, { isActive: newStatus });
+          
+          // Update the local state after successful API call
+          setUsers(users.map(user => 
+            user._id === userId ? { ...user, isActive: newStatus } : user
+          ));
+          
+          // Show success message
+          openModal({
+            title: 'Success',
+            message: `${userName} has been ${newStatus ? 'activated' : 'deactivated'} successfully.`,
+            type: 'success',
+            confirmText: 'OK'
+          });
+        } catch (err) {
+          console.error('Error updating user status:', err);
+          
+          // Show error message
+          openModal({
+            title: 'Error',
+            message: err.response?.data?.message || `Failed to ${action} user.`,
+            type: 'error',
+            confirmText: 'OK'
+          });
+        }
+      }
+    });
   };
 
   if (loading) {
@@ -185,7 +228,7 @@ const UserList = () => {
                       Edit
                     </Link>
                     <button
-                      onClick={() => toggleUserStatus(user._id, user.isActive)}
+                      onClick={() => toggleUserStatus(user._id, user.isActive, user.name)}
                       className={`${
                         user.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'
                       }`}

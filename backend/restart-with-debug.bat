@@ -1,0 +1,3 @@
+@echo off
+echo Restarting the server...
+nodemon server.js

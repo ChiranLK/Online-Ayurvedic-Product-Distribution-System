@@ -58,6 +58,14 @@ const UserSchema = new mongoose.Schema({
       // Customers are automatically approved, sellers need approval
       return this.role === 'customer';
     }
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: function() {
+      // Customers are automatically approved, sellers need approval
+      return this.role === 'seller' ? 'pending' : 'approved';
+    }
   }
 }, {
   timestamps: true
