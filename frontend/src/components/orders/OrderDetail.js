@@ -347,11 +347,11 @@ const OrderDetail = () => {
                 </p>
                 <p className="font-medium pt-2">Price Breakdown:</p>
                 <div className="pl-2 space-y-1">
-                  <p className="text-sm">Subtotal: Rs. {(order.totalAmount - order.shippingFee - order.tax + order.discount).toLocaleString()}</p>
-                  <p className="text-sm">Shipping: Rs. {order.shippingFee.toLocaleString()}</p>
-                  <p className="text-sm">Tax: Rs. {order.tax.toLocaleString()}</p>
-                  <p className="text-sm">Discount: -Rs. {order.discount.toLocaleString()}</p>
-                  <p className="font-medium pt-1">Total: Rs. {order.totalAmount.toLocaleString()}</p>
+                  <p className="text-sm">Subtotal: LKR {(order.totalAmount - order.shippingFee - order.tax + order.discount).toLocaleString()}</p>
+                  <p className="text-sm">Shipping: LKR {order.shippingFee.toLocaleString()}</p>
+                  <p className="text-sm">Tax: LKR {order.tax.toLocaleString()}</p>
+                  <p className="text-sm">Discount: -LKR {order.discount.toLocaleString()}</p>
+                  <p className="font-medium pt-1">Total: LKR {order.totalAmount.toLocaleString()}</p>
                 </div>
               </div>
             </div>
@@ -385,13 +385,13 @@ const OrderDetail = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">Rs. {item.price.toLocaleString()}</div>
+                        <div className="text-sm text-gray-900">LKR {item.price.toLocaleString()}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{item.quantity}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">Rs. {item.subtotal.toLocaleString()}</div>
+                        <div className="text-sm text-gray-900">LKR {item.subtotal.toLocaleString()}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <Link 
@@ -407,7 +407,7 @@ const OrderDetail = () => {
                 <tfoot>
                   <tr className="bg-gray-50">
                     <td colSpan="3" className="px-6 py-3 text-right font-medium">Total:</td>
-                    <td className="px-6 py-3 font-medium">Rs. {order.totalAmount.toLocaleString()}</td>
+                    <td className="px-6 py-3 font-medium">LKR {order.totalAmount.toLocaleString()}</td>
                     <td></td>
                   </tr>
                 </tfoot>

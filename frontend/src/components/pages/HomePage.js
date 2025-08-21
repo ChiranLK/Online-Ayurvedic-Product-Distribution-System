@@ -204,7 +204,7 @@ const HomePage = () => {
                     <h3 className="font-semibold text-lg text-gray-800 mb-2">{product.name}</h3>
                     <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
                     <div className="flex justify-between items-center">
-                      <span className="font-bold text-green-700">Rs. {product.price.toFixed(2)}</span>
+                      <span className="font-bold text-green-700">LKR {product.price.toFixed(2)}</span>
                       <span className="text-xs py-1 px-2 bg-green-100 text-green-800 rounded-full">{product.category}</span>
                     </div>
                   </div>

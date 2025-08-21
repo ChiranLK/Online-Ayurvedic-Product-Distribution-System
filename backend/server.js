@@ -100,12 +100,14 @@ app.use(cors({
 const profileRoutes = require('./routes/profile');
 const sellerStatsRoutes = require('./routes/sellerStats');
 const customerStatsRoutes = require('./routes/customerStats');
+const customerDashboardStatsRoutes = require('./routes/customerDashboardStats');
 const adminStatsRoutes = require('./routes/adminStats');
 const adminSellersRoutes = require('./routes/adminSellers');
 const feedbackRoutes = require('./routes/feedback');
 const usersRoutes = require('./routes/users');
 const categoriesRoutes = require('./routes/categories');
 const blogRoutes = require('./routes/blog');
+const wishlistRoutes = require('./routes/wishlistRoutes');
 
 // Routes
 app.use('/api/products', productRoutes);
@@ -118,12 +120,14 @@ app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/seller', sellerStatsRoutes);
 app.use('/api/customer', customerStatsRoutes);
+app.use('/api/customers', customerDashboardStatsRoutes);
 app.use('/api/admin/stats', adminStatsRoutes);  // Changed from /api/admin to /api/admin/stats for clarity
 app.use('/api/admin/users', usersRoutes);
 app.use('/api/admin/sellers', adminSellersRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/blog', blogRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 
 // MongoDB Connection
 console.log('Connecting to MongoDB...');

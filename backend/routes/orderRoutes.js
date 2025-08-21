@@ -78,7 +78,8 @@ router.get('/', async (req, res) => {
   try {
     const orders = await Order.find()
       .populate('customerId', 'name email')
-      .populate('items.productId', 'name price');
+      .populate('items.productId', 'name price image description')
+      .populate('items.sellerId', 'name email');
     res.json(orders);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -90,7 +91,8 @@ router.get('/:id', async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate('customerId', 'name email')
-      .populate('items.productId', 'name price');
+      .populate('items.productId', 'name price image description')
+      .populate('items.sellerId', 'name email');
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
@@ -107,7 +109,11 @@ router.put('/:id', async (req, res) => {
       req.params.id,
       req.body,
       { new: true }
-    );
+    )
+      .populate('customerId', 'name email')
+      .populate('items.productId', 'name price image description')
+      .populate('items.sellerId', 'name email');
+      
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }

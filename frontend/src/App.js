@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useEffect, useState, createContext } from 'react';
 import './App.css';
 import { ModalProvider } from './context/ModalContext';
@@ -36,6 +36,12 @@ import BlogDetail from './components/blog/BlogDetail';
 import Cart from './components/cart/Cart';
 import Checkout from './components/cart/Checkout';
 
+// Customer Support Components
+import CustomerSupport from './components/customer/CustomerSupport';
+import FAQs from './components/customer/FAQs';
+import ReturnPolicy from './components/customer/ReturnPolicy';
+import Wishlist from './components/customer/Wishlist';
+
 // Seller Components
 import SellersList from './components/sellers/SellersList';
 import SellerDetail from './components/sellers/SellerDetail';
@@ -45,6 +51,7 @@ import SellerPasswordChange from './components/seller/SellerPasswordChange';
 import SellerProductList from './components/seller/ProductList';
 import SellerAddProduct from './components/seller/AddProduct';
 import SellerEditProduct from './components/seller/EditProduct';
+import SellerInventory from './components/seller/Inventory';
 import SellerOrdersList from './components/seller/OrdersList';
 
 // Admin Components
@@ -60,10 +67,13 @@ import AdminUserEdit from './components/admin/AdminUserEdit';
 import AdminCustomersList from './components/admin/AdminCustomersList';
 import AdminSellersList from './components/admin/AdminSellersList';
 import AdminOrdersList from './components/admin/AdminOrdersList';
+import AdminOrderDetail from './components/admin/AdminOrderDetail';
 import AdminCategories from './components/admin/AdminCategories';
 import AdminUserAdd from './components/admin/AdminUserAdd';
 import AdminBlogList from './components/admin/AdminBlogList';
 import AdminBlogForm from './components/admin/AdminBlogForm';
+import SalesReport from './components/admin/SalesReport';
+import InventoryReport from './components/admin/InventoryReport';
 
 // Company and Legal Pages
 import AboutUsPage from './components/pages/company/AboutUsPage';
@@ -206,10 +216,12 @@ function App() {
               <Route path="/admin/sellers/:id" element={<SellerDetail />} />
               <Route path="/admin/sellers" element={<AdminSellersList />} />
               <Route path="/admin/orders" element={<AdminOrdersList />} />
-              <Route path="/admin/orders/:id" element={<OrderDetail />} />
+              <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
               <Route path="/admin/faq" element={<AdminFaqManager />} />
               <Route path="/admin/feedback" element={<AdminFeedbackManager />} />
               <Route path="/admin/categories" element={<AdminCategories />} />
+              <Route path="/admin/reports/sales" element={<SalesReport />} />
+              <Route path="/admin/reports/inventory" element={<InventoryReport />} />
               <Route path="/admin/users/add" element={<AdminUserAdd />} />
               <Route path="/admin/blog" element={<AdminBlogList />} />
               <Route path="/admin/blog/new" element={<AdminBlogForm />} />
@@ -226,6 +238,7 @@ function App() {
               <Route path="/seller/products/add" element={<SellerAddProduct />} />
               <Route path="/seller/products/edit/:id" element={<SellerEditProduct />} />
               <Route path="/seller/products/:id" element={<ProductDetail />} />
+              <Route path="/seller/inventory" element={<SellerInventory />} />
               <Route path="/seller/orders" element={<SellerOrdersList />} />
               <Route path="/seller/orders/:id" element={<OrderDetail />} />
             </Route>
@@ -240,7 +253,13 @@ function App() {
               <Route path="/customer/orders/:id" element={<OrderDetail />} />
               <Route path="/customer/cart" element={<Cart />} />
               <Route path="/customer/checkout" element={<Checkout />} />
+              <Route path="/customer/support" element={<CustomerSupport />} />
+              <Route path="/customer/wishlist" element={<Wishlist />} />
             </Route>
+            
+            {/* Public Routes */}
+            <Route path="/faqs" element={<FAQs />} />
+            <Route path="/return-policy" element={<ReturnPolicy />} />
             
             {/* Public Blog Routes */}
             <Route path="/blog" element={<BlogList />} />

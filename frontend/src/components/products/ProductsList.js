@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import api from '../../config/api';
-import { getFullImageUrl, handleImageError } from '../../utils/imageUtils';
 import { AuthContext } from '../../context/AuthContext';
+import ProductCard from './ProductCard';
 
 const ProductsList = () => {
-  const { isAdmin, isSeller } = useContext(AuthContext);
+  const { currentUser } = useContext(AuthContext);
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  const isSeller = currentUser && currentUser.role === 'seller';
   const location = useLocation();
   const queryParams = React.useMemo(() => {
     return new URLSearchParams(location.search);
@@ -108,7 +110,7 @@ const ProductsList = () => {
     <div>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-green-800">Products</h1>
-        {isSeller() && (
+        {isSeller && (
           <Link
             to="/products/add"
             className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg flex items-center"
@@ -182,35 +184,11 @@ const ProductsList = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredProducts.map((product) => (
-            <div key={product._id} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition">
-              <Link to={`/products/${product._id}`}>
-                <img 
-                  src={getFullImageUrl(product.imageUrl)} 
-                  alt={product.name} 
-                  className="w-full h-48 object-cover"
-                  onError={(e) => {
-                    console.log('Product list image failed to load:', e.target.src);
-                    handleImageError(e);
-                  }}
-                />
-                <div className="p-4">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-semibold text-lg text-gray-800">{product.name}</h3>
-                    <span className="bg-green-100 text-green-800 text-xs py-1 px-2 rounded-full">
-                      {product.category}
-                    </span>
-                  </div>
-                  <p className="text-gray-600 text-sm mt-2 mb-4 line-clamp-2">{product.description}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-green-700">Rs. {product.price.toFixed(2)}</span>
-                    <span className={`text-sm ${product.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-              {(isAdmin() || isSeller()) && (
-                <div className="p-4 pt-0 flex justify-between border-t mt-4">
+            <div key={product._id} className="relative">
+              <ProductCard product={product} />
+              
+              {(isAdmin || isSeller) && (
+                <div className="p-4 pt-3 flex justify-between border-t mt-1 bg-white rounded-b-lg shadow-md">
                   <Link 
                     to={`/products/edit/${product._id}`}
                     className="text-blue-600 hover:text-blue-800"

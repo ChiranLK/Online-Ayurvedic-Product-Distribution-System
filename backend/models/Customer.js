@@ -45,6 +45,10 @@ const customerSchema = new mongoose.Schema({
   orders: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Order'
+  }],
+  wishlist: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Product'
   }]
 }, {
   timestamps: true

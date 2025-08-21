@@ -28,12 +28,21 @@ const AuthProvider = ({ children }) => {
       }
 
       try {
+        // Try to get the user from localStorage first for immediate UI response
+        const userFromStorage = JSON.parse(localStorage.getItem('user'));
+        if (userFromStorage && userFromStorage.id) {
+          setCurrentUser(userFromStorage);
+        }
+        
+        // Then verify with the server
         const res = await api.get('/api/auth/me');
         setCurrentUser(res.data.data);
       } catch (err) {
         console.error('Error loading user:', err);
         // If token is invalid or expired, clear it
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userId');
         setToken(null);
       } finally {
         setLoading(false);
@@ -192,7 +201,7 @@ const AuthProvider = ({ children }) => {
   };
 
   // Computed property to determine authentication status
-  const authenticated = !!token && !!currentUser;
+  const authenticated = !!token && (!!currentUser || !!localStorage.getItem('user'));
 
   return (
     <AuthContext.Provider

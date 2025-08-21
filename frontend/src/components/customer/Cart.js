@@ -174,7 +174,7 @@ const Cart = () => {
                           <div>
                             <h3 className="text-lg font-medium text-gray-800">{item.product.name}</h3>
                             <p className="mt-1 text-sm text-gray-500">{item.product.description.substring(0, 100)}</p>
-                            <p className="mt-1 text-sm font-medium text-gray-800">Rs.{item.price}</p>
+                            <p className="mt-1 text-sm font-medium text-gray-800">LKR {item.price}</p>
                           </div>
                           <div className="mt-4 sm:mt-0">
                             <div className="flex items-center justify-between sm:justify-end">
@@ -202,7 +202,7 @@ const Cart = () => {
                                 </svg>
                               </button>
                             </div>
-                            <p className="mt-2 text-right text-sm font-semibold text-gray-800">Rs.{item.total}</p>
+                            <p className="mt-2 text-right text-sm font-semibold text-gray-800">LKR {item.total}</p>
                           </div>
                         </div>
                       </div>
@@ -220,22 +220,22 @@ const Cart = () => {
               <div className="space-y-4">
                 <div className="flex justify-between border-b border-gray-200 pb-4">
                   <p className="text-gray-600">Subtotal</p>
-                  <p className="font-medium text-gray-800">Rs.{cart.subtotal.toFixed(2)}</p>
+                  <p className="font-medium text-gray-800">LKR {cart.subtotal.toFixed(2)}</p>
                 </div>
                 <div className="flex justify-between border-b border-gray-200 pb-4">
                   <p className="text-gray-600">Shipping</p>
                   <p className="font-medium text-gray-800">
-                    {cart.shipping > 0 ? `Rs.${cart.shipping.toFixed(2)}` : 'Free'}
+                    {cart.shipping > 0 ? `LKR ${cart.shipping.toFixed(2)}` : 'Free'}
                   </p>
                 </div>
                 <div className="flex justify-between">
                   <p className="text-gray-800 font-medium">Total</p>
-                  <p className="text-green-600 font-bold">Rs.{cart.total.toFixed(2)}</p>
+                  <p className="text-green-600 font-bold">LKR {cart.total.toFixed(2)}</p>
                 </div>
                 
                 {cart.subtotal < 1500 && (
                   <div className="bg-blue-50 text-blue-700 p-3 rounded-md text-sm mt-4">
-                    Add Rs.{(1500 - cart.subtotal).toFixed(2)} more to get free shipping!
+                    Add LKR {(1500 - cart.subtotal).toFixed(2)} more to get free shipping!
                   </div>
                 )}
 

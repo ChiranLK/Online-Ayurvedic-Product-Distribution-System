@@ -246,7 +246,7 @@ const Cart = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">${(item.price || 0).toFixed(2)}</div>
+                  <div className="text-sm text-gray-900">LKR {(item.price || 0).toFixed(2)}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-2">
@@ -267,7 +267,7 @@ const Cart = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">${((item.price || 0) * item.quantity).toFixed(2)}</div>
+                  <div className="text-sm text-gray-900">LKR {((item.price || 0) * item.quantity).toFixed(2)}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button 
@@ -286,7 +286,7 @@ const Cart = () => {
       <div className="bg-gray-100 p-6 rounded-md mb-6">
         <div className="flex justify-between items-center mb-4">
           <span className="text-lg font-semibold">Subtotal:</span>
-          <span className="text-lg">${(totalPrice || 0).toFixed(2)}</span>
+          <span className="text-lg">LKR {(totalPrice || 0).toFixed(2)}</span>
         </div>
         <p className="text-sm text-gray-600 mb-4">
           Shipping and taxes calculated at checkout

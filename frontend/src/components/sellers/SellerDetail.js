@@ -245,7 +245,7 @@ const SellerDetail = () => {
                       <h3 className="font-medium text-gray-800">{product.name}</h3>
                       <p className="text-sm text-gray-600">{product.category}</p>
                       <div className="mt-2 flex justify-between items-center">
-                        <span className="text-green-700 font-medium">Rs. {product.price.toLocaleString()}</span>
+                        <span className="text-green-700 font-medium">LKR {product.price.toLocaleString()}</span>
                         <Link 
                           to={`/products/${product._id}`} 
                           className="text-sm text-blue-600 hover:text-blue-800"

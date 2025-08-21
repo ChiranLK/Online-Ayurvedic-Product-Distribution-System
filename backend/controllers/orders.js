@@ -53,10 +53,10 @@ exports.createOrder = async (req, res) => {
     const order = await Order.create({
       customerId: req.user.id,
       items: orderItems,
-      shippingAddress,
+      deliveryAddress: shippingAddress,
       paymentMethod,
-      totalPrice,
-      status: 'pending'
+      totalAmount: totalPrice,
+      status: 'Pending'
     });
 
     res.status(201).json({
@@ -74,21 +74,32 @@ exports.createOrder = async (req, res) => {
 // @access  Private
 exports.getOrders = async (req, res) => {
   try {
+    console.log(`Getting orders for user role: ${req.user.role}, user ID: ${req.user.id}`);
     let filter = {};
     
     // Filter orders based on user role
     if (req.user.role === 'customer') {
       // Customers can only see their own orders
       filter.customerId = req.user.id;
+      console.log('Filter set for customer role:', filter);
     } else if (req.user.role === 'seller') {
       // Sellers can see orders containing their products
       filter = { 'items.sellerId': req.user.id };
+      console.log('Filter set for seller role:', filter);
+    } else {
+      console.log('No filter set, assuming admin role');
     }
     // Admins can see all orders (no filter)
 
+    console.log('Fetching orders with filter:', filter);
     const orders = await Order.find(filter)
       .populate('customerId', 'name email')
+      .populate('items.productId', 'name price imageUrl')
+      .populate('items.sellerId', 'name email')
       .sort({ createdAt: -1 });
+    
+    console.log(`Found ${orders.length} orders`);
+    console.log('First order sample:', orders.length > 0 ? orders[0] : 'No orders found');
     
     res.status(200).json({
       success: true,
