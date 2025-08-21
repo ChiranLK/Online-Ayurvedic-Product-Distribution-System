@@ -155,7 +155,7 @@ const SellerDashboard = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(order.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rs.{order.totalPrice.toFixed(2)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">LKR {order.totalPrice.toFixed(2)}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                       order.status === 'delivered' 
@@ -200,7 +200,7 @@ const SellerDashboard = () => {
                 <tr key={product._id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{product.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.totalSold}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rs.{product.revenue.toFixed(2)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">LKR {product.revenue.toFixed(2)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.stock}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <Link to={`/seller/products/${product._id}/edit`} className="text-green-600 hover:text-green-900 mr-4">Edit</Link>

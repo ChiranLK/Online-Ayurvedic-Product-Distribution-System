@@ -118,6 +118,38 @@ const AdminSidebar = () => {
               {!collapsed && <span className="ml-3">Profile</span>}
             </Link>
           </li>
+          
+          <li className="pt-4 pb-2">
+            {!collapsed && <div className="text-gray-400 text-xs uppercase px-2">Reports</div>}
+          </li>
+          
+          <li>
+            <Link
+              to="/admin/reports/sales"
+              className={`flex items-center p-2 rounded-lg ${
+                isActive('/admin/reports/sales') ? 'bg-green-600' : 'hover:bg-gray-700'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              {!collapsed && <span className="ml-3">Sales Report</span>}
+            </Link>
+          </li>
+          
+          <li>
+            <Link
+              to="/admin/reports/inventory"
+              className={`flex items-center p-2 rounded-lg ${
+                isActive('/admin/reports/inventory') ? 'bg-green-600' : 'hover:bg-gray-700'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              {!collapsed && <span className="ml-3">Inventory Report</span>}
+            </Link>
+          </li>
         </ul>
       </nav>
       

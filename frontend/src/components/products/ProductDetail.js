@@ -5,6 +5,7 @@ import { addToCart } from '../../utils/cartUtils';
 import { getFullImageUrl, handleImageError } from '../../utils/imageUtils';
 import { AuthContext } from '../../context/AuthContext';
 import { useModal } from '../../context/ModalContext';
+import { FaHeart, FaRegHeart } from 'react-icons/fa';
 
 const ProductDetail = () => {
   const { currentUser, token } = useContext(AuthContext);
@@ -19,6 +20,8 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
 
   useEffect(() => {
     const fetchProductDetails = async () => {
@@ -54,7 +57,33 @@ const ProductDetail = () => {
     };
     
     fetchProductDetails();
-  }, [id]);
+    
+    // Check if product is in wishlist
+    const checkWishlist = async () => {
+      if (isAuthenticated && currentUser?.role === 'customer') {
+        try {
+          const response = await fetch('/api/wishlist', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const wishlistItems = data.wishlist || [];
+            const inWishlist = wishlistItems.some(item => item._id === id);
+            setIsInWishlist(inWishlist);
+          }
+        } catch (error) {
+          console.error('Error checking wishlist:', error);
+        }
+      }
+    };
+    
+    if (token && currentUser) {
+      checkWishlist();
+    }
+  }, [id, isAuthenticated, token, currentUser]);
 
   const handleAddToCart = () => {
     // Add to cart using cart utility function
@@ -70,6 +99,89 @@ const ProductDetail = () => {
       type: 'success',
       onConfirm: () => navigate('/cart')
     });
+  };
+  
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated) {
+      // Prompt user to login
+      openModal({
+        title: 'Login Required',
+        message: 'Please login to add items to your wishlist',
+        confirmText: 'Login',
+        cancelText: 'Cancel',
+        type: 'info',
+        onConfirm: () => navigate('/login')
+      });
+      return;
+    }
+    
+    if (currentUser.role !== 'customer') {
+      openModal({
+        title: 'Customer Account Required',
+        message: 'Only customers can add items to their wishlist',
+        confirmText: 'OK',
+        type: 'info'
+      });
+      return;
+    }
+    
+    setWishlistLoading(true);
+    
+    try {
+      if (isInWishlist) {
+        // Remove from wishlist
+        const response = await fetch(`/api/wishlist/${product._id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          setIsInWishlist(false);
+          openModal({
+            title: 'Removed from Wishlist',
+            message: `${product.name} has been removed from your wishlist`,
+            confirmText: 'OK',
+            type: 'success'
+          });
+        } else {
+          throw new Error('Failed to remove from wishlist');
+        }
+      } else {
+        // Add to wishlist
+        const response = await fetch(`/api/wishlist/${product._id}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          setIsInWishlist(true);
+          openModal({
+            title: 'Added to Wishlist',
+            message: `${product.name} has been added to your wishlist`,
+            confirmText: 'View Wishlist',
+            cancelText: 'Continue Shopping',
+            type: 'success',
+            onConfirm: () => navigate('/customer/wishlist')
+          });
+        } else {
+          throw new Error('Failed to add to wishlist');
+        }
+      }
+    } catch (error) {
+      console.error('Error updating wishlist:', error);
+      openModal({
+        title: 'Error',
+        message: 'Failed to update wishlist. Please try again.',
+        confirmText: 'OK',
+        type: 'error'
+      });
+    }
+    
+    setWishlistLoading(false);
   };
 
   if (loading) {
@@ -149,7 +261,7 @@ const ProductDetail = () => {
             </div>
             
             <div className="mt-6">
-              <p className="text-2xl font-bold text-green-700">Rs. {product.price.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-green-700">LKR {product.price.toFixed(2)}</p>
               <p className={`mt-2 ${product.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
               </p>
@@ -181,15 +293,34 @@ const ProductDetail = () => {
                   </div>
                 </div>
                 
-                <button
-                  className="w-full bg-green-700 hover:bg-green-800 text-white py-3 rounded-lg flex items-center justify-center"
-                  onClick={handleAddToCart}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <div className="flex gap-2">
+                  <button
+                    className="flex-grow bg-green-700 hover:bg-green-800 text-white py-3 rounded-lg flex items-center justify-center"
+                    onClick={handleAddToCart}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
                   </svg>
                   Add to Cart
-                </button>
+                  </button>
+                  <button
+                    className={`px-4 py-1 rounded-lg flex items-center justify-center transition-colors ${
+                      isInWishlist 
+                      ? 'bg-red-100 hover:bg-red-200 text-red-600 border border-red-300' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300'
+                    }`}
+                    onClick={handleToggleWishlist}
+                    disabled={wishlistLoading}
+                  >
+                    {wishlistLoading ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-red-500 border-opacity-50"></div>
+                    ) : isInWishlist ? (
+                      <FaHeart className="text-red-500 text-xl" />
+                    ) : (
+                      <FaRegHeart className="text-xl" />
+                    )}
+                  </button>
+                </div>
               </div>
             )}
           </div>

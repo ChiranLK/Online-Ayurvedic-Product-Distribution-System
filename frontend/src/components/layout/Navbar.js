@@ -240,6 +240,8 @@ const Navbar = () => {
                     <Link to="/admin/users" className="hover:text-green-300 transition mx-1">Users</Link>
                     <Link to="/admin/products" className="hover:text-green-300 transition mx-1">Products</Link>
                     <Link to="/admin/orders" className="hover:text-green-300 transition mx-1">Orders</Link>
+                    <Link to="/admin/reports/sales" className="hover:text-green-300 transition mx-1">Sales Reports</Link>
+                    <Link to="/admin/reports/inventory" className="hover:text-green-300 transition mx-1">Inventory Reports</Link>
                   </>
                 )}
                 

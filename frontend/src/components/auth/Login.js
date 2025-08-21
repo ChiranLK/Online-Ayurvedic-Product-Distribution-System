@@ -25,8 +25,8 @@ const Login = () => {
       // Use AuthContext login function
       await login(email, password);
       
-      // On successful login, navigate to dashboard or home
-      console.log('Login successful, redirecting to dashboard');
+      // On successful login, navigate to home page
+      console.log('Login successful, redirecting to home page');
       
       // Check if this is the user's first login
       if (!localStorage.getItem('hasLoggedInBefore')) {
@@ -34,7 +34,7 @@ const Login = () => {
         localStorage.setItem('hasLoggedInBefore', 'true');
       }
       
-      navigate('/dashboard');
+      navigate('/');
       
     } catch (err) {
       // Detailed error logging

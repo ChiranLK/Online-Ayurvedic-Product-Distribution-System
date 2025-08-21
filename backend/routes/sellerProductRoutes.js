@@ -41,11 +41,27 @@ router.post('/add', auth, upload.single('image'), async (req, res) => {
       return res.status(400).json({ message: 'Product image is required' });
     }
 
+    // First, find the category by name to get its ID
+    const Category = require('../models/Category');
+    const categoryName = req.body.category;
+    
+    // Look for an existing category with this name
+    let category = await Category.findOne({ name: categoryName });
+    
+    // If category doesn't exist, create it
+    if (!category) {
+      category = await Category.create({
+        name: categoryName,
+        description: `Category for ${categoryName} products`
+      });
+    }
+
     const productData = {
       name: req.body.name,
       description: req.body.description,
       price: Number(req.body.price),
-      category: req.body.category,
+      category: category._id, // Use the category ObjectId
+      categoryName: categoryName, // Store the category name
       stock: Number(req.body.stock),
       sellerId: req.user.id, // Use the authenticated seller's ID
       imageUrl: `/uploads/${req.file.filename}`
@@ -71,6 +87,46 @@ router.post('/add', auth, upload.single('image'), async (req, res) => {
   }
 });
 
+// Update inventory/stock quickly
+router.put('/update-stock/:id', auth, async (req, res) => {
+  try {
+    // First get the existing product to check ownership
+    const existingProduct = await Product.findById(req.params.id);
+    if (!existingProduct) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Check if user is the owner of the product
+    if (req.user.role !== 'seller' || existingProduct.sellerId.toString() !== req.user.id) {
+      return res.status(403).json({
+        message: 'Access denied. You can only update your own products.'
+      });
+    }
+
+    // Validate stock quantity
+    const stock = parseInt(req.body.stock);
+    if (isNaN(stock) || stock < 0) {
+      return res.status(400).json({ message: 'Invalid stock quantity' });
+    }
+
+    // Update only the stock field
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.id,
+      { stock: stock },
+      { new: true }
+    );
+    
+    res.json({
+      success: true,
+      data: updatedProduct
+    });
+    
+  } catch (error) {
+    console.error('Update stock error:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
 // Update an existing product as a seller
 router.put('/edit/:id', auth, upload.single('image'), async (req, res) => {
   try {
@@ -87,11 +143,27 @@ router.put('/edit/:id', auth, upload.single('image'), async (req, res) => {
       });
     }
 
+    // Handle category - convert from string to ObjectId
+    const Category = require('../models/Category');
+    const categoryName = req.body.category;
+    
+    // Look for an existing category with this name
+    let category = await Category.findOne({ name: categoryName });
+    
+    // If category doesn't exist, create it
+    if (!category) {
+      category = await Category.create({
+        name: categoryName,
+        description: `Category for ${categoryName} products`
+      });
+    }
+    
     const updateData = {
       name: req.body.name,
       description: req.body.description,
       price: req.body.price,
-      category: req.body.category,
+      category: category._id, // Use the category ObjectId
+      categoryName: categoryName, // Store the category name
       stock: req.body.stock
     };
 

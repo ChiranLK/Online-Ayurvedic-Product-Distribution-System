@@ -69,9 +69,9 @@ const SellerRegister = () => {
       // Use AuthContext register function
       await register(userData);
       
-      // Show success message and navigate to login
-      alert('Thank you for registering! Your seller account has been created. Please login to continue.');
-      navigate('/login');
+      // Show success message and navigate to home page
+      alert('Thank you for registering! Your seller account has been created.');
+      navigate('/');
       
     } catch (err) {
       // Error is handled by the AuthContext

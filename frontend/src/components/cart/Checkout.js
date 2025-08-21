@@ -18,12 +18,24 @@ const Checkout = () => {
   }
   
   // Debug auth state
+  const token = localStorage.getItem('token');
+  const userFromStorage = JSON.parse(localStorage.getItem('user') || 'null');
+  
   console.log('Auth state:', {
-    token: localStorage.getItem('token'),
+    token: token,
     userId: localStorage.getItem('userId'),
-    user: JSON.parse(localStorage.getItem('user') || 'null'),
+    user: userFromStorage,
     currentUser
   });
+  
+  // Check if user is authenticated on component mount
+  useEffect(() => {
+    if (!token) {
+      setErrors({
+        submit: 'You must be logged in to place an order. Please login and try again.'
+      });
+    }
+  }, []);
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -140,7 +152,11 @@ const Checkout = () => {
         customer: formData
       });
       
-      if (!currentUser || !currentUser.id) {
+      // Get token and user information
+      const token = localStorage.getItem('token');
+      const userFromStorage = JSON.parse(localStorage.getItem('user') || 'null');
+      
+      if (!token || (!currentUser && !userFromStorage)) {
         console.error('No authenticated user found');
         setErrors({
           submit: 'You must be logged in to place an order. Please login and try again.'
@@ -149,8 +165,8 @@ const Checkout = () => {
         return;
       }
       
-      const token = localStorage.getItem('token');
-      const userId = currentUser.id;
+      // Use either currentUser from context or userFromStorage as a fallback
+      const userId = currentUser?.id || userFromStorage?.id;
       
       console.log('Authentication info:', { 
         token, 
@@ -272,6 +288,21 @@ const Checkout = () => {
     <div className="max-w-6xl mx-auto p-4">
       <h2 className="text-2xl font-semibold text-gray-800 mb-6">Checkout</h2>
       
+      {/* Authentication Error Banner */}
+      {errors.submit && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
+          <p>{errors.submit}</p>
+          {errors.submit.includes('logged in') && (
+            <button 
+              onClick={() => navigate('/login', { state: { from: '/checkout' } })}
+              className="mt-2 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded"
+            >
+              Go to Login
+            </button>
+          )}
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Order Summary */}
         <div className="lg:col-span-1">
@@ -298,7 +329,7 @@ const Checkout = () => {
                     </div>
                   </div>
                   <p className="text-sm font-medium text-gray-900">
-                    Rs.{(item.price * item.quantity).toFixed(2)}
+                    LKR {(item.price * item.quantity).toFixed(2)}
                   </p>
                 </div>
               ))}
@@ -306,15 +337,15 @@ const Checkout = () => {
             <div className="pt-4 border-t border-gray-200">
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">Subtotal</span>
-                <span className="font-medium">Rs.{totalPrice.toFixed(2)}</span>
+                <span className="font-medium">LKR {totalPrice.toFixed(2)}</span>
               </div>
               <div className="flex justify-between mb-2">
                 <span className="text-gray-600">Shipping</span>
-                <span className="font-medium">Rs.0.00</span>
+                <span className="font-medium">LKR 0.00</span>
               </div>
               <div className="flex justify-between pt-2 border-t border-gray-200 text-lg font-bold">
                 <span>Total</span>
-                <span>Rs.{totalPrice.toFixed(2)}</span>
+                <span>LKR {totalPrice.toFixed(2)}</span>
               </div>
             </div>
           </div>

@@ -12,6 +12,11 @@ const orderSchema = new mongoose.Schema({
       ref: 'Product',
       required: true
     },
+    sellerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User', // Reference to the seller
+      required: true
+    },
     quantity: {
       type: Number,
       required: true,
@@ -21,6 +26,10 @@ const orderSchema = new mongoose.Schema({
       type: Number,
       required: true,
       min: 0
+    },
+    name: {
+      type: String,
+      required: true
     }
   }],
   totalAmount: {
@@ -30,7 +39,7 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'Processing', 'Delivered', 'Cancelled'],
+    enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
     default: 'Pending'
   },
   orderDate: {

@@ -50,8 +50,8 @@ const Register = () => {
       // Use AuthContext register function
       await register(userData);
       
-      // On successful registration, navigate to login
-      navigate('/login');
+      // On successful registration, navigate to home page
+      navigate('/');
       
     } catch (err) {
       // Error is handled by the AuthContext
