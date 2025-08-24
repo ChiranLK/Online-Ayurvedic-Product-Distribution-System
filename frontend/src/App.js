@@ -7,6 +7,7 @@ import { ModalProvider } from './context/ModalContext';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import HomePage from './components/pages/HomePage';
+import NotFound from './components/NotFound';
 
 // Product Components
 import ProductsList from './components/products/ProductsList';
@@ -269,6 +270,9 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/profile" element={<ProfileRedirect />} />
             </Route>
+            
+            {/* Catch-all route for 404 pages */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
         <Footer />
