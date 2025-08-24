@@ -195,7 +195,7 @@ npm test
 
 ## 📱 Screenshots
 
-*[You can add screenshots of your application here]*
+
 
 ## 🤝 Contributing
 
