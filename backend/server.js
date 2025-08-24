@@ -108,6 +108,7 @@ const usersRoutes = require('./routes/users');
 const categoriesRoutes = require('./routes/categories');
 const blogRoutes = require('./routes/blog');
 const wishlistRoutes = require('./routes/wishlistRoutes');
+const sellerRequestsRoutes = require('./routes/sellerRequests');
 
 // Routes
 app.use('/api/products', productRoutes);
@@ -128,6 +129,7 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/blog', blogRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/seller-requests', sellerRequestsRoutes);
 
 // MongoDB Connection
 console.log('Connecting to MongoDB...');

@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import api from '../../config/api';
 
 const AdminSidebar = () => {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const [pendingSellerRequests, setPendingSellerRequests] = useState(0);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -12,6 +14,26 @@ const AdminSidebar = () => {
   const isActive = (path) => {
     return location.pathname === path;
   };
+  
+  useEffect(() => {
+    const fetchSellerRequestsCount = async () => {
+      try {
+        const response = await api.get('/api/seller-requests');
+        if (response.data && response.data.count) {
+          setPendingSellerRequests(response.data.count);
+        }
+      } catch (err) {
+        console.error('Error fetching seller requests count:', err);
+      }
+    };
+    
+    fetchSellerRequestsCount();
+    
+    // Refresh count every 5 minutes
+    const interval = setInterval(fetchSellerRequestsCount, 300000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className={`bg-gray-800 text-white ${collapsed ? 'w-16' : 'w-64'} transition-all duration-300 flex flex-col`}>
@@ -102,6 +124,36 @@ const AdminSidebar = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               {!collapsed && <span className="ml-3">Sellers</span>}
+            </Link>
+          </li>
+
+          <li>
+            <Link
+              to="/admin/seller-requests"
+              className={`flex items-center p-2 rounded-lg ${
+                isActive('/admin/seller-requests') ? 'bg-green-600' : 'hover:bg-gray-700'
+              }`}
+            >
+              <div className="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {pendingSellerRequests > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {pendingSellerRequests > 9 ? '9+' : pendingSellerRequests}
+                  </span>
+                )}
+              </div>
+              {!collapsed && (
+                <div className="ml-3 flex items-center">
+                  <span>Seller Requests</span>
+                  {pendingSellerRequests > 0 && !collapsed && (
+                    <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                      {pendingSellerRequests}
+                    </span>
+                  )}
+                </div>
+              )}
             </Link>
           </li>
           

@@ -69,6 +69,7 @@ import AdminCategories from './components/admin/AdminCategories';
 import AdminUserAdd from './components/admin/AdminUserAdd';
 import AdminBlogList from './components/admin/AdminBlogList';
 import AdminBlogForm from './components/admin/AdminBlogForm';
+import AdminSellerRequests from './components/admin/AdminSellerRequests';
 import SalesReport from './components/admin/SalesReport';
 import InventoryReport from './components/admin/InventoryReport';
 
@@ -223,6 +224,7 @@ function App() {
               <Route path="/admin/blog" element={<AdminBlogList />} />
               <Route path="/admin/blog/new" element={<AdminBlogForm />} />
               <Route path="/admin/blog/edit/:id" element={<AdminBlogForm />} />
+              <Route path="/admin/seller-requests" element={<AdminSellerRequests />} />
             </Route>
             
             {/* Seller Routes */}

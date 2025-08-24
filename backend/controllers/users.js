@@ -118,6 +118,31 @@ exports.updateUser = async (req, res) => {
       { new: true, runValidators: true }
     ).select('-password');
 
+    // Check if role was changed to seller and create seller record if needed
+    if (role === 'seller' && userToUpdate.role !== 'seller') {
+      // Import Seller model
+      const Seller = require('../models/Seller');
+      
+      // Check if seller record already exists
+      const existingSeller = await Seller.findOne({ userId: updatedUser._id });
+      
+      if (!existingSeller) {
+        // Create a new seller record
+        await Seller.create({
+          userId: updatedUser._id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          phone: updatedUser.phone,
+          address: updatedUser.address,
+          city: updatedUser.city,
+          state: updatedUser.state,
+          zipcode: updatedUser.zipcode,
+          status: updatedUser.isApproved ? 'approved' : 'pending'
+        });
+        console.log(`Created seller record for user ID: ${updatedUser._id}`);
+      }
+    }
+
     res.status(200).json({
       success: true,
       data: updatedUser
