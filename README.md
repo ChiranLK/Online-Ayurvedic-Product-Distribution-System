@@ -220,4 +220,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-*Developed by @NIMADITH-LMH,@ChiranLK,sanka25*
+*Developed by NIMADITH-LMH *
