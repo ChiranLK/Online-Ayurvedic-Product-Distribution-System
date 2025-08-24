@@ -44,8 +44,6 @@ const ProductList = () => {
 
     // Uncomment to use real API
     // fetchProducts();
-    
-    // Using mock data for now
     const mockProducts = [
       {
         _id: '2',

@@ -21,12 +21,16 @@ router.get('/stats', auth, async (req, res) => {
     const active = products.filter(product => product.isActive && product.countInStock > 0).length;
     const outOfStock = products.filter(product => product.countInStock === 0).length;
     
+    // Check if this is a new seller with no products
+    const isNewSeller = total === 0;
+    
     res.status(200).json({
       success: true,
       data: {
         total,
         active,
-        outOfStock
+        outOfStock,
+        isNewSeller
       }
     });
   } catch (error) {

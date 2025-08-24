@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import ProfileEdit from '../common/ProfileEdit';
 import PasswordUpdate from '../common/PasswordUpdate';
+import api from '../../config/api';
 
 const CustomerProfile = () => {
   const { currentUser } = useContext(AuthContext);
@@ -19,15 +20,10 @@ const CustomerProfile = () => {
 
       try {
         // Make an API call to get real customer statistics
-        const response = await fetch('/api/customer/stats', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        const response = await api.get('/api/customer/stats');
         
-        if (response.ok) {
-          const data = await response.json();
-          setOrderStats(data.data);
+        if (response.data && response.data.data) {
+          setOrderStats(response.data.data);
         } else {
           console.error('Failed to fetch customer stats:', response.statusText);
         }
@@ -160,7 +156,199 @@ const CustomerProfile = () => {
             View All Orders
           </Link>
         </div>
+        
+        {/* Become a Seller Section */}
+        <div className="mt-10 bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-green-800 mb-4">Become a Seller</h2>
+          <BecomeSellerSection />
+        </div>
       </div>
+    </div>
+  );
+};
+
+// Become a Seller component
+const BecomeSellerSection = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [requestStatus, setRequestStatus] = useState(null);
+  const [reason, setReason] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  
+  // Fetch any existing request on component mount
+  useEffect(() => {
+    const fetchSellerRequest = async () => {
+      try {
+        const response = await api.get('/api/seller-requests/me');
+        
+        if (response.data && response.data.data && response.data.data.requested) {
+          setRequestStatus(response.data.data.requestStatus);
+        }
+      } catch (error) {
+        console.error('Error fetching seller request:', error);
+      }
+    };
+    
+    fetchSellerRequest();
+  }, []);
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    
+    try {
+      const response = await api.post('/api/seller-requests', { reason });
+      
+      if (response.data && response.data.success) {
+        setSuccess(true);
+        setRequestStatus('pending');
+        setShowForm(false);
+      } else {
+        setError(response.data?.message || 'Failed to submit request');
+      }
+    } catch (err) {
+      console.error('Error submitting seller request:', err);
+      // Check if there's a response with error details from the server
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Error submitting request. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // If user already has a request
+  if (requestStatus) {
+    return (
+      <div>
+        {requestStatus === 'pending' && (
+          <div className="bg-yellow-50 p-4 rounded-lg">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">Your seller application is pending</h3>
+                <div className="mt-2 text-sm text-yellow-700">
+                  <p>We're reviewing your request to become a seller. You'll be notified once a decision is made.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {requestStatus === 'approved' && (
+          <div className="bg-green-50 p-4 rounded-lg">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-green-800">Your seller application was approved!</h3>
+                <div className="mt-2 text-sm text-green-700">
+                  <p>You now have seller privileges. Please log out and log back in to access your seller dashboard.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {requestStatus === 'rejected' && (
+          <div className="bg-red-50 p-4 rounded-lg">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">Your seller application was declined</h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>Unfortunately, your request to become a seller has been declined. Please contact customer support for more information.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+  
+  return (
+    <div>
+      {!showForm ? (
+        <div className="text-center">
+          <p className="mb-4 text-gray-600">
+            Would you like to sell your own Ayurvedic products on our platform? 
+            Apply to become a seller today!
+          </p>
+          <button
+            onClick={() => setShowForm(true)}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Apply to Become a Seller
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-100 text-red-700 p-3 rounded-lg">
+              {error}
+            </div>
+          )}
+          
+          {success && (
+            <div className="bg-green-100 text-green-700 p-3 rounded-lg">
+              Your seller request has been submitted successfully!
+            </div>
+          )}
+          
+          <div>
+            <label className="block text-gray-700 font-medium mb-2" htmlFor="reason">
+              Why do you want to become a seller?
+            </label>
+            <textarea
+              id="reason"
+              name="reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              rows="4"
+              required
+            ></textarea>
+            <p className="text-sm text-gray-500 mt-1">
+              Please tell us about what products you plan to sell and your experience with Ayurvedic products.
+            </p>
+          </div>
+          
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className={`px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 ${
+                loading ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
+            >
+              {loading ? 'Submitting...' : 'Submit Request'}
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 };

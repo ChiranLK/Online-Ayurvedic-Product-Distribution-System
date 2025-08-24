@@ -152,7 +152,7 @@ const AddCustomer = () => {
         let errorMessage = 'Registration failed. Please try again.';
         
         // Check for specific error message from the server
-        if (error.response && error.response.data && error.response.data.message) {
+        if (error.response?.data?.message) {
           errorMessage = error.response.data.message;
         }
         

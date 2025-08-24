@@ -15,7 +15,7 @@ const UserSchema = new mongoose.Schema({
     trim: true,
     lowercase: true,
     match: [
-      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+      /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
       'Please provide a valid email'
     ]
   },
@@ -65,6 +65,23 @@ const UserSchema = new mongoose.Schema({
     default: function() {
       // Customers are automatically approved, sellers need approval
       return this.role === 'seller' ? 'pending' : 'approved';
+    }
+  },
+  sellerRequest: {
+    requested: {
+      type: Boolean,
+      default: false
+    },
+    requestDate: {
+      type: Date
+    },
+    requestStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
+    },
+    reason: {
+      type: String
     }
   }
 }, {

@@ -21,7 +21,7 @@ const Cart = () => {
         
         console.log('Cart data received:', response.data);
         
-        if (response.data && response.data.items) {
+        if (response.data?.items) {
           // Log product image URLs for debugging
           if (response.data.items.length > 0) {
             console.log('First cart item:', response.data.items[0]);

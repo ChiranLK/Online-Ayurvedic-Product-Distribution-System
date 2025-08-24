@@ -11,7 +11,6 @@ import HomePage from './components/pages/HomePage';
 // Product Components
 import ProductsList from './components/products/ProductsList';
 import ProductDetail from './components/products/ProductDetail';
-import AddProduct from './components/products/AddProduct';
 import EditProduct from './components/products/EditProduct';
 
 // Order Components
@@ -19,7 +18,6 @@ import OrdersList from './components/orders/OrdersList';
 import OrderDetail from './components/orders/OrderDetail';
 
 // Customer Components
-import CustomersList from './components/customers/CustomersList';
 import CustomerDetail from './components/customers/CustomerDetail';
 import CustomerProfile from './components/customer/CustomerProfile';
 import CustomerProfileEdit from './components/customer/CustomerProfileEdit';
@@ -43,7 +41,6 @@ import ReturnPolicy from './components/customer/ReturnPolicy';
 import Wishlist from './components/customer/Wishlist';
 
 // Seller Components
-import SellersList from './components/sellers/SellersList';
 import SellerDetail from './components/sellers/SellerDetail';
 import SellerProfile from './components/seller/SellerProfile';
 import SellerProfileEdit from './components/seller/SellerProfileEdit';
@@ -72,6 +69,7 @@ import AdminCategories from './components/admin/AdminCategories';
 import AdminUserAdd from './components/admin/AdminUserAdd';
 import AdminBlogList from './components/admin/AdminBlogList';
 import AdminBlogForm from './components/admin/AdminBlogForm';
+import AdminSellerRequests from './components/admin/AdminSellerRequests';
 import SalesReport from './components/admin/SalesReport';
 import InventoryReport from './components/admin/InventoryReport';
 
@@ -226,6 +224,7 @@ function App() {
               <Route path="/admin/blog" element={<AdminBlogList />} />
               <Route path="/admin/blog/new" element={<AdminBlogForm />} />
               <Route path="/admin/blog/edit/:id" element={<AdminBlogForm />} />
+              <Route path="/admin/seller-requests" element={<AdminSellerRequests />} />
             </Route>
             
             {/* Seller Routes */}

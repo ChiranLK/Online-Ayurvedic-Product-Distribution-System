@@ -143,20 +143,42 @@ const SellerProfile = () => {
             <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-green-500"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-green-50 p-4 rounded-lg text-center">
-              <p className="text-gray-600 mb-1">Total Products</p>
-              <p className="text-3xl font-bold text-green-800">{productStats.total}</p>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-green-50 p-4 rounded-lg text-center">
+                <p className="text-gray-600 mb-1">Total Products</p>
+                <p className="text-3xl font-bold text-green-800">{productStats.total}</p>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-lg text-center">
+                <p className="text-gray-600 mb-1">Active Products</p>
+                <p className="text-3xl font-bold text-blue-700">{productStats.active}</p>
+              </div>
+              <div className="bg-red-50 p-4 rounded-lg text-center">
+                <p className="text-gray-600 mb-1">Out of Stock</p>
+                <p className="text-3xl font-bold text-red-700">{productStats.outOfStock}</p>
+              </div>
             </div>
-            <div className="bg-blue-50 p-4 rounded-lg text-center">
-              <p className="text-gray-600 mb-1">Active Products</p>
-              <p className="text-3xl font-bold text-blue-700">{productStats.active}</p>
-            </div>
-            <div className="bg-red-50 p-4 rounded-lg text-center">
-              <p className="text-gray-600 mb-1">Out of Stock</p>
-              <p className="text-3xl font-bold text-red-700">{productStats.outOfStock}</p>
-            </div>
-          </div>
+            
+            {productStats.isNewSeller && (
+              <div className="mt-6 bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-600 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <h4 className="font-medium text-yellow-800">Welcome New Seller!</h4>
+                </div>
+                <p className="mt-2 text-yellow-700">
+                  You don't have any products yet. Add your first product to start selling.
+                </p>
+                <Link 
+                  to="/seller/products/add" 
+                  className="mt-3 inline-block px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200"
+                >
+                  Add Your First Product
+                </Link>
+              </div>
+            )}
+          </>
         )}
         
         <div className="mt-6 text-center">
