@@ -22,9 +22,11 @@ JWT_EXPIRE=30d
 ```
 
 > **Note:** For security, each team member should generate their own JWT_SECRET using:
+>
 > ```bash
 > node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 > ```
+>
 
 ### 3. Install Dependencies
 
