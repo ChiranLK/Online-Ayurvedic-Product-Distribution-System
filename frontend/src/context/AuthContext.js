@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import api from '../config/api';
 
@@ -30,7 +30,7 @@ const AuthProvider = ({ children }) => {
       try {
         // Try to get the user from localStorage first for immediate UI response
         const userFromStorage = JSON.parse(localStorage.getItem('user'));
-        if (userFromStorage && userFromStorage.id) {
+        if (userFromStorage?.id) {
           setCurrentUser(userFromStorage);
         }
         
@@ -53,7 +53,7 @@ const AuthProvider = ({ children }) => {
   }, [token]);
 
   // Register user
-  const register = async (userData) => {
+  const register = useCallback(async (userData) => {
     try {
       setLoading(true);
       setError(null);
@@ -94,10 +94,10 @@ const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setLoading, setError, setToken, setCurrentUser]);
 
   // Login user
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     try {
       setLoading(true);
       setError(null);
@@ -120,40 +120,40 @@ const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setLoading, setError, setToken, setCurrentUser]);
 
   // Logout user
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
     localStorage.removeItem('user');
     localStorage.removeItem('customerId'); // Remove legacy storage
     setToken(null);
     setCurrentUser(null);
-  };
+  }, [setToken, setCurrentUser]);
 
   // Check if user has a specific role
-  const hasRole = (roles) => {
-    if (!currentUser || !currentUser.role) return false;
+  const hasRole = useCallback((roles) => {
+    if (!currentUser?.role) return false;
     
     if (Array.isArray(roles)) {
       return roles.includes(currentUser.role);
     }
     
     return currentUser.role === roles;
-  };
+  }, [currentUser]);
 
   // Check if current user is admin
-  const isAdmin = () => hasRole('admin');
+  const isAdmin = useCallback(() => hasRole('admin'), [hasRole]);
   
   // Check if current user is seller
-  const isSeller = () => hasRole('seller');
+  const isSeller = useCallback(() => hasRole('seller'), [hasRole]);
   
   // Check if current user is customer
-  const isCustomer = () => hasRole('customer');
+  const isCustomer = useCallback(() => hasRole('customer'), [hasRole]);
 
   // Update user profile
-  const updateProfile = async (profileData) => {
+  const updateProfile = useCallback(async (profileData) => {
     try {
       setLoading(true);
       setError(null);
@@ -174,10 +174,10 @@ const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setLoading, setError, setCurrentUser]);
 
   // Update user password
-  const updatePassword = async (currentPassword, newPassword) => {
+  const updatePassword = useCallback(async (currentPassword, newPassword) => {
     try {
       setLoading(true);
       setError(null);
@@ -198,31 +198,32 @@ const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setLoading, setError]);
 
   // Computed property to determine authentication status
   const authenticated = !!token && (!!currentUser || !!localStorage.getItem('user'));
 
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = React.useMemo(() => ({
+    currentUser,
+    token,
+    loading,
+    error,
+    isAuthenticated: authenticated,
+    register,
+    login,
+    logout,
+    updateProfile,
+    updatePassword,
+    hasRole,
+    isAdmin,
+    isSeller,
+    isCustomer,
+    setError
+  }), [currentUser, token, loading, error, authenticated, register, login, logout, updateProfile, updatePassword, hasRole, isAdmin, isSeller, isCustomer, setError]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        currentUser,
-        token,
-        loading,
-        error,
-        isAuthenticated: authenticated,
-        register,
-        login,
-        logout,
-        updateProfile,
-        updatePassword,
-        hasRole,
-        isAdmin,
-        isSeller,
-        isCustomer,
-        setError
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

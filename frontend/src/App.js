@@ -11,7 +11,6 @@ import HomePage from './components/pages/HomePage';
 // Product Components
 import ProductsList from './components/products/ProductsList';
 import ProductDetail from './components/products/ProductDetail';
-import AddProduct from './components/products/AddProduct';
 import EditProduct from './components/products/EditProduct';
 
 // Order Components
@@ -19,7 +18,6 @@ import OrdersList from './components/orders/OrdersList';
 import OrderDetail from './components/orders/OrderDetail';
 
 // Customer Components
-import CustomersList from './components/customers/CustomersList';
 import CustomerDetail from './components/customers/CustomerDetail';
 import CustomerProfile from './components/customer/CustomerProfile';
 import CustomerProfileEdit from './components/customer/CustomerProfileEdit';
@@ -43,7 +41,6 @@ import ReturnPolicy from './components/customer/ReturnPolicy';
 import Wishlist from './components/customer/Wishlist';
 
 // Seller Components
-import SellersList from './components/sellers/SellersList';
 import SellerDetail from './components/sellers/SellerDetail';
 import SellerProfile from './components/seller/SellerProfile';
 import SellerProfileEdit from './components/seller/SellerProfileEdit';
