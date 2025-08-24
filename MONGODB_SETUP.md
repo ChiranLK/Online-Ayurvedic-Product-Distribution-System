@@ -63,16 +63,4 @@ restart.bat
 
 ## MongoDB Atlas Dashboard Access
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-If you need access to the MongoDB Atlas dashboard, please contact the project administrator which is mn pko.
-=======
-If you need access to the MongoDB Atlas dashboard, please contact the project administrator which is me pko.
->>>>>>> Stashed changes
-=======
-If you need access to the MongoDB Atlas dashboard, please contact the project administrator which is me pko.
->>>>>>> Stashed changes
-
-## Security Note
-
-Keep your .env file secure and never commit it to the repository.
+If you need access to the MongoDB Atlas dashboard, please contact the project administrator.
