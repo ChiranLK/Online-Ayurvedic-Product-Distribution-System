@@ -11,7 +11,13 @@ const AdminDashboard = () => {
     totalOrders: 0,
     totalCustomers: 0,
     totalSellers: 0,
-    pendingSellers: 0
+    pendingSellers: 0,
+    pendingAppointments: 0,
+    confirmedAppointments: 0,
+    completedAppointments: 0,
+    todayMorningAppointments: 0,
+    todayAfternoonAppointments: 0,
+    todayEveningAppointments: 0
   });
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -156,6 +162,99 @@ const AdminDashboard = () => {
       </div>
 
       {/* Quick Links */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {/* New Appointment Stats Card */}
+        <div className="bg-purple-50 p-6 rounded-lg shadow-md border border-purple-200">
+          <h2 className="text-lg font-semibold text-purple-800 mb-4">Appointment Management</h2>
+          <div className="flex justify-between mb-4">
+            <div className="text-center px-4">
+              <p className="text-2xl font-bold text-purple-700">
+                {stats.pendingAppointments || 0}
+              </p>
+              <p className="text-sm text-gray-600">Pending</p>
+            </div>
+            <div className="text-center px-4">
+              <p className="text-2xl font-bold text-green-700">
+                {stats.confirmedAppointments || 0}
+              </p>
+              <p className="text-sm text-gray-600">Approved</p>
+            </div>
+            <div className="text-center px-4">
+              <p className="text-2xl font-bold text-blue-700">
+                {stats.completedAppointments || 0}
+              </p>
+              <p className="text-sm text-gray-600">Completed</p>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <Link 
+              to="/admin/appointments" 
+              className="bg-purple-600 text-white text-center py-2 rounded-lg hover:bg-purple-700"
+            >
+              Manage Appointments
+            </Link>
+            <Link 
+              to="/admin/appointments/today" 
+              className="bg-green-600 text-white text-center py-2 rounded-lg hover:bg-green-700"
+            >
+              Today's Schedule
+            </Link>
+          </div>
+        </div>
+        
+        {/* New Doctor's Schedule Card */}
+        <div className="bg-blue-50 p-6 rounded-lg shadow-md border border-blue-200">
+          <h2 className="text-lg font-semibold text-blue-800 mb-4">Doctor's Schedule</h2>
+          <p className="text-gray-600 mb-4">Manage Ayurvedic doctor availability and appointment slots</p>
+          <ul className="space-y-2 mb-4">
+            <li className="flex items-center">
+              <span className="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+              <span className="text-gray-700">Create and update doctor schedules</span>
+            </li>
+            <li className="flex items-center">
+              <span className="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+              <span className="text-gray-700">View upcoming appointments</span>
+            </li>
+            <li className="flex items-center">
+              <span className="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
+              <span className="text-gray-700">Set available time slots</span>
+            </li>
+          </ul>
+          <Link 
+            to="/admin/doctor-schedule" 
+            className="block w-full bg-blue-600 text-white text-center py-2 rounded-lg hover:bg-blue-700"
+          >
+            Manage Schedule
+          </Link>
+        </div>
+        
+        {/* New Today's Appointments Card */}
+        <div className="bg-green-50 p-6 rounded-lg shadow-md border border-green-200">
+          <h2 className="text-lg font-semibold text-green-800 mb-4">Today's Appointments</h2>
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-700">Morning (9AM-12PM):</span>
+              <span className="font-medium">{stats.todayMorningAppointments || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-700">Afternoon (1PM-5PM):</span>
+              <span className="font-medium">{stats.todayAfternoonAppointments || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-700">Evening (6PM-9PM):</span>
+              <span className="font-medium">{stats.todayEveningAppointments || 0}</span>
+            </div>
+          </div>
+          <Link 
+            to="/admin/appointments/today" 
+            className="block w-full bg-green-600 text-white text-center py-2 rounded-lg hover:bg-green-700"
+          >
+            View Today's Schedule
+          </Link>
+        </div>
+      </div>
+
+      {/* Quick Links */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Admin Settings</h2>
@@ -214,6 +313,9 @@ const AdminDashboard = () => {
             <li>
               <Link to="/admin/banner" className="text-green-600 hover:underline">Banner Management</Link>
             </li>
+            <li>
+              <Link to="/admin/appointments" className="text-green-600 hover:underline">Doctor Appointments</Link>
+            </li>
           </ul>
         </div>
 
@@ -228,6 +330,9 @@ const AdminDashboard = () => {
             </li>
             <li>
               <Link to="/admin/reports/inventory" className="text-green-600 hover:underline">Inventory Reports</Link>
+            </li>
+            <li>
+              <Link to="/admin/reports/appointments" className="text-green-600 hover:underline">Appointment Reports</Link>
             </li>
           </ul>
         </div>
