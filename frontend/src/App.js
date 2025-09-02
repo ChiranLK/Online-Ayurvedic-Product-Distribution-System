@@ -73,6 +73,13 @@ import AdminBlogForm from './components/admin/AdminBlogForm';
 import AdminSellerRequests from './components/admin/AdminSellerRequests';
 import SalesReport from './components/admin/SalesReport';
 import InventoryReport from './components/admin/InventoryReport';
+import Appointments from './components/customer/Appointments';
+import AppointmentForm from './components/customer/AppointmentForm';
+import AppointmentDetail from './components/customer/AppointmentDetail';
+import AdminAppointments from './components/admin/AdminAppointments';
+import AdminAppointmentDetail from './components/admin/AdminAppointmentDetail';
+import AdminAppointmentEdit from './components/admin/AdminAppointmentEdit';
+import TodaysSchedule from './components/admin/TodaysSchedule';
 
 // Company and Legal Pages
 import AboutUsPage from './components/pages/company/AboutUsPage';
@@ -226,6 +233,10 @@ function App() {
               <Route path="/admin/blog/new" element={<AdminBlogForm />} />
               <Route path="/admin/blog/edit/:id" element={<AdminBlogForm />} />
               <Route path="/admin/seller-requests" element={<AdminSellerRequests />} />
+              <Route path="/admin/appointments" element={<AdminAppointments />} />
+              <Route path="/admin/appointments/today" element={<TodaysSchedule />} />
+              <Route path="/admin/appointments/:id" element={<AdminAppointmentDetail />} />
+              <Route path="/admin/appointments/:id/edit" element={<AdminAppointmentEdit />} />
             </Route>
             
             {/* Seller Routes */}
@@ -255,6 +266,9 @@ function App() {
               <Route path="/customer/checkout" element={<Checkout />} />
               <Route path="/customer/support" element={<CustomerSupport />} />
               <Route path="/customer/wishlist" element={<Wishlist />} />
+              <Route path="/customer/appointments" element={<Appointments />} />
+              <Route path="/customer/appointments/new" element={<AppointmentForm />} />
+              <Route path="/customer/appointments/:id" element={<AppointmentDetail />} />
             </Route>
             
             {/* Public Routes */}

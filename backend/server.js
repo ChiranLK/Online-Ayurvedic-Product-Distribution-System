@@ -109,6 +109,7 @@ const categoriesRoutes = require('./routes/categories');
 const blogRoutes = require('./routes/blog');
 const wishlistRoutes = require('./routes/wishlistRoutes');
 const sellerRequestsRoutes = require('./routes/sellerRequests');
+const appointmentRoutes = require('./routes/appointmentRoutes');
 
 // Routes
 app.use('/api/products', productRoutes);
@@ -117,6 +118,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/sellers', sellerRoutes);
 app.use('/api/seller-products', sellerProductRoutes);
 app.use('/api/seller-orders', sellerOrderRoutes);
+app.use('/api/appointments', appointmentRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/seller', sellerStatsRoutes);

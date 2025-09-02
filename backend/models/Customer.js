@@ -56,13 +56,20 @@ const customerSchema = new mongoose.Schema({
 
 // Password hashing middleware
 customerSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
+  // Only hash the password if it has been modified (or is new)
+  if (!this.isModified('password')) {
+    console.log('Customer password not modified, skipping hashing');
+    return next();
+  }
   
   try {
+    console.log('Hashing password for customer:', this._id);
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
+    console.log('Password hashed successfully');
     next();
   } catch (error) {
+    console.error('Error hashing password:', error);
     next(error);
   }
 });
