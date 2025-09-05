@@ -202,6 +202,34 @@ const AdminSidebar = () => {
               {!collapsed && <span className="ml-3">Inventory Report</span>}
             </Link>
           </li>
+          
+          <li>
+            <Link
+              to="/admin/reports/appointments"
+              className={`flex items-center p-2 rounded-lg ${
+                isActive('/admin/reports/appointments') ? 'bg-green-600' : 'hover:bg-gray-700'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              {!collapsed && <span className="ml-3">Appointment Reports</span>}
+            </Link>
+          </li>
+          
+          <li>
+            <Link
+              to="/admin/reports/orders"
+              className={`flex items-center p-2 rounded-lg ${
+                isActive('/admin/reports/orders') ? 'bg-green-600' : 'hover:bg-gray-700'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              {!collapsed && <span className="ml-3">Order Reports</span>}
+            </Link>
+          </li>
         </ul>
       </nav>
       

@@ -14,6 +14,9 @@ const sellerRoutes = require('./routes/sellerRoutes');
 const sellerProductRoutes = require('./routes/sellerProductRoutes');
 const sellerOrderRoutes = require('./routes/sellerOrderRoutes');
 const authRoutes = require('./routes/auth');
+const adminInventoryRoutes = require('./routes/adminInventory');
+const adminAppointmentsRoutes = require('./routes/adminAppointments');
+const adminOrderRoutes = require('./routes/adminOrderRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000; // Using the port from .env file (5000)
@@ -127,6 +130,9 @@ app.use('/api/customers', customerDashboardStatsRoutes);
 app.use('/api/admin/stats', adminStatsRoutes);  // Changed from /api/admin to /api/admin/stats for clarity
 app.use('/api/admin/users', usersRoutes);
 app.use('/api/admin/sellers', adminSellersRoutes);
+app.use('/api/admin/inventory', adminInventoryRoutes);
+app.use('/api/admin/appointments', adminAppointmentsRoutes);
+app.use('/api/admin/orders', adminOrderRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/blog', blogRoutes);

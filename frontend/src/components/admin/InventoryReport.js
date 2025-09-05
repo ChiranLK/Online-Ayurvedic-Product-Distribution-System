@@ -48,16 +48,34 @@ const InventoryReport = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/api/products');
+        // Use the new admin inventory endpoint that properly populates seller info
+        const response = await api.get('/api/admin/inventory');
         console.log('Products API response:', response.data);
         
         // Handle both data structures: response.data.data (if wrapped) or response.data (if direct array)
         const productsData = response.data.data || response.data || [];
-        console.log('Processed products data:', productsData);
-        setProducts(productsData);
+        
+        // Map countInStock to stock field if needed for backward compatibility
+        // and ensure seller information is correctly processed
+        const mappedProducts = productsData.map(product => {
+          // Debug the seller information
+          console.log('Product seller information:', product.name, product.sellerId);
+          
+          return {
+            ...product,
+            countInStock: product.stock, // For backward compatibility
+            // Add a seller property with the name for easier access
+            seller: product.sellerId && typeof product.sellerId === 'object' 
+              ? product.sellerId
+              : { name: 'Unknown Seller', _id: product.sellerId }
+          };
+        });
+        
+        console.log('Processed products data:', mappedProducts);
+        setProducts(mappedProducts);
         
         // Extract unique categories and sellers
-        extractCategoriesAndSellers(productsData);
+        extractCategoriesAndSellers(mappedProducts);
         
         setLoading(false);
       } catch (err) {
@@ -71,16 +89,27 @@ const InventoryReport = () => {
   }, []);
 
   const extractCategoriesAndSellers = (productsData) => {
-    const allCategories = productsData.map(product => product.category).filter(Boolean);
+    // Extract unique categories - prefer categoryName if available
+    const allCategories = productsData
+      .map(product => product.categoryName || product.category)
+      .filter(Boolean);
     const uniqueCategories = [...new Set(allCategories)];
     setCategories(uniqueCategories);
     
-    const allSellers = productsData
-      .filter(product => product.seller && typeof product.seller === 'object')
-      .map(product => ({
-        _id: product.seller._id,
-        name: product.seller.name || 'Unknown Seller'
-      }));
+    // Extract unique sellers from seller field or sellerId field
+    const allSellers = [];
+    
+    productsData.forEach(product => {
+      // Try both seller and sellerId
+      const sellerInfo = product.seller || product.sellerId;
+      
+      if (sellerInfo && typeof sellerInfo === 'object' && sellerInfo._id) {
+        allSellers.push({
+          _id: sellerInfo._id,
+          name: sellerInfo.name || 'Unknown Seller'
+        });
+      }
+    });
     
     // Remove duplicates
     const uniqueSellers = allSellers.filter((seller, index, self) =>
@@ -88,6 +117,10 @@ const InventoryReport = () => {
     );
     
     setSellers(uniqueSellers);
+    
+    // Debug
+    console.log('Extracted categories:', uniqueCategories);
+    console.log('Extracted sellers:', uniqueSellers);
   };
 
   const handleSearchChange = (e) => {
@@ -111,20 +144,20 @@ const InventoryReport = () => {
     if (!product) return false;
     
     const nameMatch = product.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
-    const categoryMatch = !categoryFilter || product.category === categoryFilter;
+    const categoryMatch = !categoryFilter || product.category === categoryFilter || product.categoryName === categoryFilter;
     
     let sellerMatch = !sellerFilter;
-    if (sellerFilter && product.seller) {
-      sellerMatch = product.seller._id === sellerFilter;
+    if (sellerFilter && product.sellerId) {
+      sellerMatch = product.sellerId._id === sellerFilter || product.sellerId === sellerFilter;
     }
     
     let stockMatch = true;
     if (stockFilter === 'instock') {
-      stockMatch = (product.countInStock || 0) > 0;
+      stockMatch = (product.stock || 0) > 0;
     } else if (stockFilter === 'lowstock') {
-      stockMatch = (product.countInStock || 0) > 0 && (product.countInStock || 0) <= 10;
+      stockMatch = (product.stock || 0) > 0 && (product.stock || 0) <= 10;
     } else if (stockFilter === 'outofstock') {
-      stockMatch = (product.countInStock || 0) === 0;
+      stockMatch = (product.stock || 0) === 0;
     }
     
     return nameMatch && categoryMatch && sellerMatch && stockMatch;
@@ -132,10 +165,10 @@ const InventoryReport = () => {
 
   // Calculate inventory statistics
   const totalProducts = filteredProducts.length;
-  const totalStock = filteredProducts.reduce((sum, product) => sum + (product.countInStock || 0), 0);
-  const outOfStockCount = filteredProducts.filter(product => (product.countInStock || 0) === 0).length;
+  const totalStock = filteredProducts.reduce((sum, product) => sum + (product.stock || 0), 0);
+  const outOfStockCount = filteredProducts.filter(product => (product.stock || 0) === 0).length;
   const lowStockCount = filteredProducts.filter(product => 
-    (product.countInStock || 0) > 0 && (product.countInStock || 0) <= 10
+    (product.stock || 0) > 0 && (product.stock || 0) <= 10
   ).length;
 
   // Generate PDF report
@@ -195,10 +228,12 @@ const InventoryReport = () => {
       const tableRows = filteredProducts.map(product => [
         product._id.substring(product._id.length - 8),
         product.name || 'Unknown Product',
-        product.category || 'Uncategorized',
+        product.categoryName || product.category || 'Uncategorized',
         `LKR ${(product.price || 0).toFixed(2)}`,
-        product.countInStock || 0,
-        product.seller ? (typeof product.seller === 'object' ? product.seller.name : 'Unknown') : 'Unknown'
+        product.stock || 0,
+        (product.seller && product.seller.name) || 
+        (product.sellerId && typeof product.sellerId === 'object' && product.sellerId.name) || 
+        'Unknown'
       ]);
       
       // Check if autotable plugin is available
@@ -268,10 +303,12 @@ const InventoryReport = () => {
         'Product ID': product._id,
         'Name': product.name || 'Unknown Product',
         'Description': product.description || '',
-        'Category': product.category || 'Uncategorized',
+        'Category': product.categoryName || product.category || 'Uncategorized',
         'Price': product.price || 0,
-        'Stock': product.countInStock || 0,
-        'Seller': product.seller ? (typeof product.seller === 'object' ? product.seller.name : 'Unknown') : 'Unknown'
+        'Stock': product.stock || 0,
+        'Seller': (product.seller && product.seller.name) || 
+                 (product.sellerId && typeof product.sellerId === 'object' && product.sellerId.name) || 
+                 'Unknown'
       }));
       
       const ws = XLSX.utils.json_to_sheet(wsData);
@@ -307,10 +344,12 @@ const InventoryReport = () => {
         'Product ID': product._id,
         'Name': product.name || 'Unknown Product',
         'Description': product.description || '',
-        'Category': product.category || 'Uncategorized',
+        'Category': product.categoryName || product.category || 'Uncategorized',
         'Price': product.price || 0,
-        'Stock': product.countInStock || 0,
-        'Seller': product.seller ? (typeof product.seller === 'object' ? product.seller.name : 'Unknown') : 'Unknown'
+        'Stock': product.stock || 0,
+        'Seller': (product.seller && product.seller.name) || 
+                 (product.sellerId && typeof product.sellerId === 'object' && product.sellerId.name) || 
+                 'Unknown'
       }));
       setCsvData(data);
     }
@@ -551,12 +590,14 @@ const InventoryReport = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {product.category || 'Uncategorized'}
+                        {product.categoryName || product.category || 'Uncategorized'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {product.seller ? (typeof product.seller === 'object' ? product.seller.name : 'Unknown') : 'Unknown'}
+                        {(product.seller && product.seller.name) || 
+                         (product.sellerId && typeof product.sellerId === 'object' && product.sellerId.name) || 
+                         'Unknown'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -565,16 +606,16 @@ const InventoryReport = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {product.countInStock || 0}
+                      {product.stock || 0}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        (product.countInStock || 0) > 10 ? 'bg-green-100 text-green-800' :
-                        (product.countInStock || 0) > 0 ? 'bg-yellow-100 text-yellow-800' :
+                        (product.stock || 0) > 10 ? 'bg-green-100 text-green-800' :
+                        (product.stock || 0) > 0 ? 'bg-yellow-100 text-yellow-800' :
                         'bg-red-100 text-red-800'
                       }`}>
-                        {(product.countInStock || 0) > 10 ? 'In Stock' :
-                         (product.countInStock || 0) > 0 ? 'Low Stock' :
+                        {(product.stock || 0) > 10 ? 'In Stock' :
+                         (product.stock || 0) > 0 ? 'Low Stock' :
                          'Out of Stock'}
                       </span>
                     </td>
