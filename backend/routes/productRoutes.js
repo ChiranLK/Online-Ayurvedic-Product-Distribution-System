@@ -30,7 +30,13 @@ router.get('/', async (req, res) => {
       filter.sellerId = sellerId;
     }
     
-    const products = await Product.find(filter).populate('sellerId', 'name');
+    // Get products with populated seller information
+    const products = await Product.find(filter)
+      .populate({
+        path: 'sellerId',
+        select: 'name email',
+        model: 'Seller'
+      });
     
     res.status(200).json({
       success: true,

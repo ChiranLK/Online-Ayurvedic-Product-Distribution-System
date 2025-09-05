@@ -73,6 +73,8 @@ import AdminBlogForm from './components/admin/AdminBlogForm';
 import AdminSellerRequests from './components/admin/AdminSellerRequests';
 import SalesReport from './components/admin/SalesReport';
 import InventoryReport from './components/admin/InventoryReport';
+import AppointmentReport from './components/admin/AppointmentReport';
+import OrdersReport from './components/admin/OrdersReport';
 import Appointments from './components/customer/Appointments';
 import AppointmentForm from './components/customer/AppointmentForm';
 import AppointmentDetail from './components/customer/AppointmentDetail';
@@ -228,6 +230,8 @@ function App() {
               <Route path="/admin/categories" element={<AdminCategories />} />
               <Route path="/admin/reports/sales" element={<SalesReport />} />
               <Route path="/admin/reports/inventory" element={<InventoryReport />} />
+              <Route path="/admin/reports/appointments" element={<AppointmentReport />} />
+              <Route path="/admin/reports/orders" element={<OrdersReport />} />
               <Route path="/admin/users/add" element={<AdminUserAdd />} />
               <Route path="/admin/blog" element={<AdminBlogList />} />
               <Route path="/admin/blog/new" element={<AdminBlogForm />} />

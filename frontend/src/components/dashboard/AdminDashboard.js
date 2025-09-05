@@ -323,9 +323,6 @@ const AdminDashboard = () => {
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Orders & Reports</h2>
           <ul className="space-y-2">
             <li>
-              <Link to="/orders" className="text-green-600 hover:underline">All Orders</Link>
-            </li>
-            <li>
               <Link to="/admin/reports/sales" className="text-green-600 hover:underline">Sales Reports</Link>
             </li>
             <li>
@@ -333,6 +330,9 @@ const AdminDashboard = () => {
             </li>
             <li>
               <Link to="/admin/reports/appointments" className="text-green-600 hover:underline">Appointment Reports</Link>
+            </li>
+            <li>
+              <Link to="/admin/reports/orders" className="text-green-600 hover:underline">Order Reports</Link>
             </li>
           </ul>
         </div>

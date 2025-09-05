@@ -26,7 +26,7 @@ exports.getProducts = async (req, res) => {
     }
     
     const products = await Product.find(filter)
-      .populate('sellerId', 'name')
+      .populate('sellerId', 'name email')
       .populate('category', 'name');
     
     res.status(200).json({
@@ -152,7 +152,8 @@ exports.deleteProduct = async (req, res) => {
 // @access  Private/Seller
 exports.getSellerProducts = async (req, res) => {
   try {
-    const products = await Product.find({ sellerId: req.user.id });
+    const products = await Product.find({ sellerId: req.user.id })
+      .populate('sellerId', 'name email');
     
     res.status(200).json({
       success: true,
