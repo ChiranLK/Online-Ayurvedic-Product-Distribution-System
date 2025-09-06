@@ -6,7 +6,7 @@
  * @param {number} quantity - Quantity to add (default: 1)
  * @returns {object} - Updated cart
  */
-export const addToCart = (productId, quantity = 1) => {
+export const addToCart = (productId, quantity = 1, productData = null) => {
   // Get current cart from localStorage or initialize empty array
   const cart = JSON.parse(localStorage.getItem('ayurvedicCart')) || [];
   console.log('Cart before update:', cart);
@@ -20,8 +20,18 @@ export const addToCart = (productId, quantity = 1) => {
     console.log('Updated existing item in cart:', cart[existingItemIndex]);
   } else {
     // Add new item if product doesn't exist in cart
-    cart.push({ productId, quantity });
-    console.log('Added new item to cart:', { productId, quantity });
+    // If productData is provided, use it to store additional product info
+    const cartItem = { productId, quantity };
+    
+    // Add additional data if provided
+    if (productData) {
+      cartItem.name = productData.name;
+      cartItem.price = productData.price;
+      cartItem.sellerId = productData.sellerId;
+    }
+    
+    cart.push(cartItem);
+    console.log('Added new item to cart:', cartItem);
   }
   
   // Save updated cart to localStorage

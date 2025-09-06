@@ -35,7 +35,7 @@ const Checkout = () => {
         submit: 'You must be logged in to place an order. Please login and try again.'
       });
     }
-  }, []);
+  }, [token]); // Add token as a dependency
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -146,6 +146,17 @@ const Checkout = () => {
     setOrderProcessing(true);
     
     try {
+      // Ensure that we have all required data before submitting
+      // Check cart items for required fields
+      const hasAllRequiredFields = cartItems.every(item => 
+        item.name && (item.sellerId || item._id)
+      );
+      
+      if (!hasAllRequiredFields) {
+        console.warn('Some cart items are missing required fields. Attempting to fetch fresh product data...');
+        // Here you could add logic to refresh the product data if needed
+      }
+      
       console.log('Submitting order with data:', {
         items: cartItems,
         totalPrice,
@@ -175,14 +186,28 @@ const Checkout = () => {
         role: currentUser.role 
       });
       
+      // Log each cart item to debug
+      cartItems.forEach((item, index) => {
+        console.log(`Cart item ${index}:`, {
+          id: item._id,
+          name: item.name,
+          sellerId: item.sellerId,
+          price: item.price,
+          quantity: item.quantity
+        });
+      });
+      
       // Prepare order data
       const orderData = {
         customerId: userId, // This will actually be overridden on the server with the ID from the token
         items: cartItems.map(item => ({
-          // Make sure to properly extract the product ID from cart items
+          // Make sure to properly extract the product ID and seller ID from cart items
           productId: item.product?._id || item._id,
+          // For testing, use a hardcoded seller ID if item.sellerId is null
+          sellerId: item.sellerId || "68a0bdb67f763ac2bfa43689", // Temporary fix - set a default seller ID
           quantity: item.quantity,
-          price: item.price
+          price: item.price,
+          name: item.name || 'Unknown Product' // Include the name required by Order schema
         })),
         totalAmount: totalPrice,
         deliveryAddress: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,

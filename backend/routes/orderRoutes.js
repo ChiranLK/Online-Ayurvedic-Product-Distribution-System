@@ -43,12 +43,23 @@ router.post('/', auth, async (req, res) => {
         throw new Error(`Invalid productId format: ${item.productId}`);
       }
       
+      // Ensure sellerId is a valid ObjectId if provided
+      if (item.sellerId && typeof item.sellerId === 'string' && !mongoose.Types.ObjectId.isValid(item.sellerId)) {
+        throw new Error(`Invalid sellerId format: ${item.sellerId}`);
+      }
+      
+      // Format the item data
       return {
         productId: item.productId,
+        sellerId: item.sellerId,
+        name: item.name,
         quantity: item.quantity,
         price: item.price
       };
     });
+    
+    // Log the formatted items for debugging
+    console.log('Formatted items:', formattedItems);
     
     // Create order with formatted items and use the authenticated user's ID as the customerId
     // This ensures orders are always associated with the authenticated user

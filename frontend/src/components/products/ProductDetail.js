@@ -86,8 +86,18 @@ const ProductDetail = () => {
   }, [id, isAuthenticated, token, currentUser]);
 
   const handleAddToCart = () => {
-    // Add to cart using cart utility function
-    const updatedCart = addToCart(product._id, quantity);
+    // Create product data object with necessary fields for order creation
+    const productData = {
+      name: product.name,
+      price: product.price,
+      sellerId: product.sellerId
+    };
+    
+    // Log the product data to verify seller ID is available
+    console.log('Adding to cart with product data:', productData);
+    
+    // Add to cart using cart utility function with product data
+    const updatedCart = addToCart(product._id, quantity, productData);
     console.log('Added to cart:', updatedCart);
     
     // Show custom notification modal instead of browser alert
