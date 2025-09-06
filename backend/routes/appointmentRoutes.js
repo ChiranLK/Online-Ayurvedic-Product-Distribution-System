@@ -18,11 +18,11 @@ router.post('/', auth, authorize('customer'), async (req, res) => {
       role: req.user.role
     });
     
-    const { problem, preferredDate, preferredTimeSlot } = req.body;
-    console.log('Appointment request details:', { problem, preferredDate, preferredTimeSlot });
+    const { patientName, contactNumber, problem, preferredDate, preferredTimeSlot } = req.body;
+    console.log('Appointment request details:', { patientName, contactNumber, problem, preferredDate, preferredTimeSlot });
 
     // Validate required fields first
-    if (!problem || !preferredDate || !preferredTimeSlot) {
+    if (!patientName || !contactNumber || !problem || !preferredDate || !preferredTimeSlot) {
       console.log('Missing required fields in request');
       return res.status(400).json({ message: 'Please provide all required fields' });
     }
@@ -32,9 +32,10 @@ router.post('/', auth, authorize('customer'), async (req, res) => {
     
     // Directly create the appointment using the User data instead of Customer
     const newAppointment = new Appointment({
-      // Generate a temporary ObjectId for customerId if needed
-      customerId: new mongoose.Types.ObjectId(),
+      customer: req.user.id, // Use the authenticated user ID
       customerName: req.user.name, // Use the name from the authenticated user
+      patientName, // New field added
+      contactNumber, // New field added
       problem,
       preferredDate: new Date(preferredDate),
       preferredTimeSlot,
@@ -42,7 +43,10 @@ router.post('/', auth, authorize('customer'), async (req, res) => {
     });
     
     console.log('Created appointment object:', {
+      customer: newAppointment.customer,
       customerName: newAppointment.customerName,
+      patientName: newAppointment.patientName,
+      contactNumber: newAppointment.contactNumber,
       problem: newAppointment.problem,
       preferredDate: newAppointment.preferredDate,
       preferredTimeSlot: newAppointment.preferredTimeSlot,

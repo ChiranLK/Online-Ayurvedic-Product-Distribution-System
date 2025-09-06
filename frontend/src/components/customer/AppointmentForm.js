@@ -23,12 +23,14 @@ const AppointmentForm = () => {
   const formattedThreeMonthsLater = threeMonthsLater.toISOString().split('T')[0];
 
   const [formData, setFormData] = useState({
+    patientName: currentUser?.name || '',
+    contactNumber: '',
     problem: '',
     preferredDate: '',
     preferredTimeSlot: ''
   });
 
-  const { problem, preferredDate, preferredTimeSlot } = formData;
+  const { patientName, contactNumber, problem, preferredDate, preferredTimeSlot } = formData;
 
   const onChange = e => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -38,7 +40,7 @@ const AppointmentForm = () => {
     e.preventDefault();
     
     // Validation
-    if (!problem || !preferredDate || !preferredTimeSlot) {
+    if (!patientName || !contactNumber || !problem || !preferredDate || !preferredTimeSlot) {
       setError('All fields are required');
       return;
     }
@@ -54,6 +56,8 @@ const AppointmentForm = () => {
       // Show success message and reset form
       setSuccess(true);
       setFormData({
+        patientName: currentUser?.name || '',
+        contactNumber: '',
         problem: '',
         preferredDate: '',
         preferredTimeSlot: ''
@@ -101,6 +105,40 @@ const AppointmentForm = () => {
       )}
 
       <form onSubmit={onSubmit}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label className="block text-gray-700 mb-2" htmlFor="patientName">
+              Patient Name *
+            </label>
+            <input
+              type="text"
+              id="patientName"
+              name="patientName"
+              value={patientName}
+              onChange={onChange}
+              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Enter patient name"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-gray-700 mb-2" htmlFor="contactNumber">
+              Contact Number *
+            </label>
+            <input
+              type="text"
+              id="contactNumber"
+              name="contactNumber"
+              value={contactNumber}
+              onChange={onChange}
+              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Enter contact number"
+              required
+            />
+          </div>
+        </div>
+        
         <div className="mb-6">
           <label className="block text-gray-700 mb-2" htmlFor="problem">
             Health Problem or Reason for Visit *

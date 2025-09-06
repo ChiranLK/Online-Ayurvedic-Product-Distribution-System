@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../config/api';
+import { AuthContext } from '../../context/AuthContext';
 
 const OrdersList = () => {
+  const { currentUser } = useContext(AuthContext);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -10,10 +12,33 @@ const OrdersList = () => {
 
   useEffect(() => {
     const fetchOrders = async () => {
+      if (!currentUser || !currentUser.id) {
+        // Try to get user from localStorage as fallback
+        const userFromStorage = JSON.parse(localStorage.getItem('user') || 'null');
+        
+        if (!userFromStorage || !userFromStorage.id) {
+          setError('User information not available. Please log in again.');
+          setLoading(false);
+          return;
+        }
+        
+        // Use user from localStorage
+        try {
+          const response = await api.get(`/api/customers/${userFromStorage.id}/orders`);
+          setOrders(response.data.orders || []);
+          setLoading(false);
+        } catch (error) {
+          console.error('Error fetching orders:', error);
+          setError('Failed to fetch orders. Please try again later.');
+          setLoading(false);
+        }
+        return;
+      }
+
       try {
-        // Fetch orders from API
-        const response = await api.get('/api/orders');
-        setOrders(response.data || []);
+        // Fetch only the current user's orders using the customer-specific endpoint
+        const response = await api.get(`/api/customers/${currentUser.id}/orders`);
+        setOrders(response.data.orders || []);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching orders:', error);
@@ -23,7 +48,7 @@ const OrdersList = () => {
     };
     
     fetchOrders();
-  }, []);
+  }, [currentUser]);
 
   // Filter orders based on status
   const filteredOrders = statusFilter
@@ -75,16 +100,7 @@ const OrdersList = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-green-800">Orders</h1>
-        <Link
-          to="/orders/add"
-          className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg flex items-center"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-          </svg>
-          Add New Order
-        </Link>
+        <h1 className="text-3xl font-bold text-green-800">My Orders</h1>
       </div>
 
       {/* Filter by Status */}
@@ -146,7 +162,7 @@ const OrdersList = () => {
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Customer
+                    Order Details
                   </th>
                   <th
                     scope="col"
@@ -182,21 +198,23 @@ const OrdersList = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {order.customerId.name}
+                        Payment: {order.paymentMethod || 'COD'}
                       </div>
-                      <div className="text-sm text-gray-500">{order.customerId.email}</div>
+                      <div className="text-sm text-gray-500">
+                        {(order.shippingAddress?.city || 'Delivery pending')}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">
-                        {formatDate(order.orderDate)}
+                        {formatDate(order.createdAt)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        LKR {order.totalAmount.toFixed(2)}
+                        LKR {(order.totalPrice || order.totalAmount).toFixed(2)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
+                        {(order.products || order.items || []).length} {(order.products || order.items || []).length === 1 ? 'item' : 'items'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -206,31 +224,11 @@ const OrdersList = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link
-                        to={`/orders/${order._id}`}
+                        to={`/customer/orders/${order._id}`}
                         className="text-green-600 hover:text-green-800 mr-4"
                       >
                         View
                       </Link>
-                      <Link
-                        to={`/orders/edit/${order._id}`}
-                        className="text-blue-600 hover:text-blue-800 mr-4"
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        className="text-red-600 hover:text-red-800"
-                        onClick={() => {
-                          if (window.confirm('Are you sure you want to delete this order?')) {
-                            // In a real app, delete via API
-                            // axios.delete(`http://localhost:5000/api/orders/${order._id}`);
-                            // Then update state
-                            // setOrders(orders.filter(o => o._id !== order._id));
-                            console.log(`Delete order ${order._id}`);
-                          }
-                        }}
-                      >
-                        Delete
-                      </button>
                     </td>
                   </tr>
                 ))}

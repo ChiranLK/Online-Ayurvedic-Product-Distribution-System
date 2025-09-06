@@ -65,11 +65,15 @@ const Cart = () => {
         const fullImageUrl = getFullImageUrl(product.imageUrl);
         console.log('Full image URL:', fullImageUrl);
         
+        // Merge the product data with any additional data stored in the cart item
         return {
           ...product,
+          ...cartItem, // Include any data stored directly in the cart item (name, sellerId, etc.)
           imageUrl: product.imageUrl, // Ensure we have the imageUrl
           fullImageUrl: fullImageUrl, // Store the full URL for direct access
-          quantity: cartItem.quantity
+          quantity: cartItem.quantity,
+          // Ensure we have the seller ID (either from the cart item or from the product)
+          sellerId: cartItem.sellerId || product.sellerId
         };
       }).filter(item => item !== null); // Remove null items
       
