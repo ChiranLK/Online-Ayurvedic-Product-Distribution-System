@@ -1,5 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import api from '../../config/api';
+import { AuthContext } from '../../context/AuthContext';
+
+// Debug log when component loads
+console.log('EditOrder component loaded');
 
 const EditOrder = () => {
   const { id } = useParams();
@@ -7,6 +12,8 @@ const EditOrder = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [canEdit, setCanEdit] = useState(false);
+  const { currentUser } = useContext(AuthContext);
   
   // Order data
   const [orderData, setOrderData] = useState({
@@ -28,59 +35,86 @@ const EditOrder = () => {
   useEffect(() => {
     const fetchOrderData = async () => {
       try {
-        // In a real app, fetch from API
-        // const response = await axios.get(`http://localhost:5000/api/orders/${id}`);
-        // setOrderData(response.data);
+        setLoading(true);
+        console.log('Fetching order data for ID:', id);
         
-        // Mock data
-        const mockOrder = {
-          _id: id,
-          orderNumber: 'ORD-2023-' + id,
-          customerId: '1',
-          customerName: 'Kamal Perera',
-          customerEmail: 'kamal@example.com',
-          customerPhone: '0771234567',
-          shippingAddress: '456 Beach Road, Colombo 03, Sri Lanka',
-          billingAddress: '456 Beach Road, Colombo 03, Sri Lanka',
-          orderDate: '2023-10-15T08:30:00.000Z',
-          status: 'Processing',
-          paymentMethod: 'Credit Card',
-          paymentStatus: 'Paid',
-          totalAmount: 12500,
-          shippingFee: 500,
-          discount: 1000,
-          tax: 1500,
-          trackingNumber: 'SLT12345678',
-          notes: 'Please deliver during work hours (9 AM - 5 PM)',
-          items: [
-            {
-              productId: '1',
-              productName: 'Ashwagandha Powder',
-              quantity: 2,
-              price: 2500,
-              subtotal: 5000,
-              image: 'https://images.unsplash.com/photo-1626198226928-99ef1ba1d285?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'
-            },
-            {
-              productId: '3',
-              productName: 'Turmeric Capsules',
-              quantity: 3,
-              price: 1500,
-              subtotal: 4500,
-              image: 'https://images.unsplash.com/photo-1626198138066-7891428d1a74?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'
-            },
-            {
-              productId: '5',
-              productName: 'Aloe Vera Gel',
-              quantity: 1,
-              price: 2000,
-              subtotal: 2000,
-              image: 'https://images.unsplash.com/photo-1596046611348-7db3c12eac56?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'
-            }
-          ]
-        };
+        // Fetch order details from the API
+        const response = await api.get(`/api/orders/${id}`);
+        console.log('API response:', response);
         
-        setOrderData(mockOrder);
+        // Handle both data structures: response.data.data or response.data directly
+        const orderData = response.data.data || response.data;
+        
+        if (!orderData) {
+          throw new Error('Order not found');
+        }
+        
+        console.log('Order data loaded:', orderData);
+        console.log('Current user:', currentUser);
+        
+        // Check if user is authorized to edit this order
+        const customerId = typeof orderData.customerId === 'object' ? orderData.customerId._id : orderData.customerId;
+        console.log('Order customerId:', customerId, 'Current user ID:', currentUser?.id);
+        
+        const isCustomerOrder = currentUser && 
+          (customerId === currentUser.id || 
+           customerId === currentUser._id);
+        
+        console.log('Is customer order?', isCustomerOrder);
+        
+        // Only allow editing if:
+        // 1. The order belongs to the current user
+        // 2. The order status is Pending or Processing (not shipped, delivered, or cancelled)
+        const editableStatus = ['Pending', 'Processing'].includes(orderData.status);
+        console.log('Order status:', orderData.status, 'Is status editable?', editableStatus);
+        
+        setCanEdit(isCustomerOrder && editableStatus);
+        
+        if (!isCustomerOrder) {
+          console.log('Access denied: Not customer order');
+          setError("You can only edit your own orders");
+        } else if (!editableStatus) {
+          console.log('Access denied: Order status not editable');
+          setError(`Orders with status "${orderData.status}" cannot be edited`);
+        }
+        
+        // Format the order data for the form
+        setOrderData({
+          _id: orderData._id,
+          orderNumber: orderData.orderNumber,
+          customerId: orderData.customerId && typeof orderData.customerId === 'object' ? orderData.customerId._id : orderData.customerId,
+          customerName: orderData.customerName || (orderData.customerId && typeof orderData.customerId === 'object' ? orderData.customerId.name : ''),
+          customerEmail: orderData.customerEmail || (orderData.customerId && typeof orderData.customerId === 'object' ? orderData.customerId.email : ''),
+          customerPhone: orderData.customerPhone || (orderData.customerId && typeof orderData.customerId === 'object' ? orderData.customerId.phone : ''),
+          shippingAddress: orderData.shippingAddress || orderData.deliveryAddress || '',
+          billingAddress: orderData.billingAddress || orderData.deliveryAddress || '',
+          orderDate: orderData.orderDate || orderData.createdAt,
+          status: orderData.status || 'Pending',
+          paymentMethod: orderData.paymentMethod || 'COD',
+          paymentStatus: orderData.paymentStatus || 'Pending',
+          totalAmount: orderData.totalAmount,
+          shippingFee: orderData.shippingFee || 0,
+          discount: orderData.discount || 0,
+          tax: orderData.tax || 0,
+          trackingNumber: orderData.trackingNumber || '',
+          notes: orderData.notes || '',
+          items: (orderData.items || []).map(item => {
+            // Handle both populated and non-populated items
+            const productId = item.productId && typeof item.productId === 'object' ? item.productId._id : item.productId;
+            const productName = item.name || (item.productId && typeof item.productId === 'object' ? item.productId.name : 'Unknown Product');
+            const image = item.image || (item.productId && typeof item.productId === 'object' ? item.productId.image : null);
+            
+            return {
+              productId,
+              productName,
+              quantity: item.quantity,
+              price: item.price,
+              subtotal: item.price * item.quantity,
+              image: image || '/images/product-placeholder.jpg'
+            };
+          })
+        });
+        
         setLoading(false);
       } catch (err) {
         console.error('Error fetching order data:', err);
@@ -90,8 +124,10 @@ const EditOrder = () => {
     };
     
     fetchOrderData();
-  }, [id]);
+  }, [id, currentUser]);
 
+
+  // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setOrderData({
@@ -100,41 +136,92 @@ const EditOrder = () => {
     });
   };
 
+  // Handle quantity changes for order items
+  const handleQuantityChange = (index, newQuantity) => {
+    // Ensure quantity is at least 1
+    newQuantity = Math.max(1, parseInt(newQuantity) || 1);
+    
+    const updatedItems = [...orderData.items];
+    updatedItems[index] = {
+      ...updatedItems[index],
+      quantity: newQuantity,
+      subtotal: newQuantity * updatedItems[index].price
+    };
+    
+    setOrderData({
+      ...orderData,
+      items: updatedItems
+    });
+  };
+
+  // Calculate order totals
   const calculateTotals = () => {
     const subtotal = orderData.items.reduce((sum, item) => sum + item.subtotal, 0);
-    const shippingFee = orderData.shippingFee || 500;
-    const tax = orderData.tax || Math.round(subtotal * 0.15);
+    const shippingFee = orderData.shippingFee || 0;
+    const tax = orderData.tax || 0;
     const discount = orderData.discount || 0;
     const total = subtotal + shippingFee + tax - discount;
     
     return { subtotal, shippingFee, tax, discount, total };
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!canEdit) {
+      setError("This order cannot be edited");
+      return;
+    }
+    
     setSubmitting(true);
     setError('');
+    console.log('Submitting order update...');
 
     try {
       // Validate form
-      if (!orderData.shippingAddress || !orderData.billingAddress) {
-        throw new Error('Shipping and billing addresses are required');
+      if (!orderData.shippingAddress) {
+        throw new Error('Shipping address is required');
       }
 
-      // In a real app, put to API
-      // const response = await axios.put(`http://localhost:5000/api/orders/${id}`, orderData);
+      // Prepare data for API - only include fields customers can edit
+      const updateData = {
+        shippingAddress: orderData.shippingAddress,
+        notes: orderData.notes,
+        items: orderData.items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity
+        }))
+      };
       
-      // Simulate API call
-      console.log('Updating order:', orderData);
+      console.log('Update data to send:', updateData);
+
+      // Call API to update order
+      const response = await api.put(`/api/orders/${id}`, updateData);
+      console.log('Order update successful:', response.data);
       
       // Redirect on success
-      setTimeout(() => {
-        setSubmitting(false);
-        navigate(`/orders/${id}`);
-      }, 1000);
-    } catch (err) {
       setSubmitting(false);
-      setError(err.message || 'Failed to update order. Please try again later.');
+      navigate(`/customer/orders/${id}`);
+    } catch (err) {
+      console.error('Error updating order:', err);
+      setSubmitting(false);
+      
+      // Handle error message extraction
+      let errorMessage = 'Failed to update order. Please try again later.';
+      
+      if (err.response && err.response.data) {
+        if (err.response.data.message) {
+          errorMessage = err.response.data.message;
+        } else if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      console.log('Setting error message:', errorMessage);
+      setError(errorMessage);
     }
   };
 
@@ -180,7 +267,7 @@ const EditOrder = () => {
   };
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto px-4 py-6">
       {/* Back Navigation */}
       <div className="mb-6">
         <Link
@@ -194,11 +281,22 @@ const EditOrder = () => {
         </Link>
       </div>
 
+      {error && (
+        <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6">
+          <p>{error}</p>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6 pb-4 border-b">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">Edit Order {orderData.orderNumber}</h1>
+              {!canEdit && (
+                <p className="mt-2 text-sm text-red-600">
+                  This order cannot be edited. Orders can only be modified while in "Pending" or "Processing" status.
+                </p>
+              )}
               <p className="text-gray-600">
                 Created on {new Date(orderData.orderDate).toLocaleDateString()}
               </p>
@@ -241,55 +339,22 @@ const EditOrder = () => {
                 <h2 className="text-lg font-semibold text-gray-700 mb-2">Order Information</h2>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="mb-4">
-                    <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select
-                      id="status"
-                      name="status"
-                      value={orderData.status}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50"
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Processing">Processing</option>
-                      <option value="Shipped">Shipped</option>
-                      <option value="Delivered">Delivered</option>
-                      <option value="Cancelled">Cancelled</option>
-                      <option value="Returned">Returned</option>
-                    </select>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${getStatusColor(orderData.status)}`}>
+                      {orderData.status}
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">Order status can only be updated by sellers or admin</p>
                   </div>
                   <div className="mb-4">
-                    <label htmlFor="paymentStatus" className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
-                    <select
-                      id="paymentStatus"
-                      name="paymentStatus"
-                      value={orderData.paymentStatus}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50"
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Paid">Paid</option>
-                      <option value="Failed">Failed</option>
-                      <option value="Refunded">Refunded</option>
-                    </select>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+                    <div className="text-gray-900">{orderData.paymentStatus}</div>
                   </div>
                   <div>
-                    <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-                    <select
-                      id="paymentMethod"
-                      name="paymentMethod"
-                      value={orderData.paymentMethod}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50"
-                    >
-                      <option value="Credit Card">Credit Card</option>
-                      <option value="Debit Card">Debit Card</option>
-                      <option value="Cash on Delivery">Cash on Delivery</option>
-                      <option value="Bank Transfer">Bank Transfer</option>
-                      <option value="PayPal">PayPal</option>
-                    </select>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                    <div className="text-gray-900">{orderData.paymentMethod}</div>
                   </div>
-                </div>
               </div>
+            </div>
 
               {/* Shipping Information */}
               <div>
@@ -297,7 +362,8 @@ const EditOrder = () => {
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="shippingAddress" className="block text-sm font-medium text-gray-700">
-                      Shipping Address
+                      Shipping Address <span className="text-green-600">*</span>
+                      {canEdit && <span className="text-xs text-green-600 ml-2">(Editable)</span>}
                     </label>
                     <textarea
                       id="shippingAddress"
@@ -305,12 +371,13 @@ const EditOrder = () => {
                       rows="3"
                       value={orderData.shippingAddress}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50"
+                      className={`mt-1 block w-full rounded-md ${canEdit 
+                        ? "border-green-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50" 
+                        : "border-gray-300 bg-gray-100"}`}
                       required
+                      disabled={!canEdit}
                     ></textarea>
-                  </div>
-                  
-                  <div>
+                  </div>                  <div>
                     <label htmlFor="trackingNumber" className="block text-sm font-medium text-gray-700">
                       Tracking Number
                     </label>
@@ -326,43 +393,27 @@ const EditOrder = () => {
                 </div>
               </div>
 
-              {/* Billing Information */}
+              {/* Additional Notes */}
               <div>
-                <h2 className="text-lg font-semibold text-gray-700 mb-2">Billing Information</h2>
+                <h2 className="text-lg font-semibold text-gray-700 mb-2">Additional Notes</h2>
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="billingAddress" className="block text-sm font-medium text-gray-700">
-                      Billing Address
+                    <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
+                      Notes for Delivery
+                      {canEdit && <span className="text-xs text-green-600 ml-2">(Editable)</span>}
                     </label>
                     <textarea
-                      id="billingAddress"
-                      name="billingAddress"
+                      id="notes"
+                      name="notes"
                       rows="3"
-                      value={orderData.billingAddress}
+                      value={orderData.notes || ''}
                       onChange={handleInputChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50"
-                      required
+                      placeholder="Add any special instructions for delivery"
+                      className={`mt-1 block w-full rounded-md ${canEdit 
+                        ? "border-green-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50" 
+                        : "border-gray-300 bg-gray-100"}`}
+                      disabled={!canEdit}
                     ></textarea>
-                  </div>
-                  
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="sameAsBilling"
-                      checked={orderData.shippingAddress === orderData.billingAddress}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setOrderData({
-                            ...orderData,
-                            billingAddress: orderData.shippingAddress
-                          });
-                        }
-                      }}
-                      className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="sameAsBilling" className="ml-2 block text-sm text-gray-900">
-                      Billing address same as shipping address
-                    </label>
                   </div>
                 </div>
               </div>
@@ -382,8 +433,8 @@ const EditOrder = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {orderData.items.map((item) => (
-                      <tr key={item.productId}>
+                    {orderData.items.map((item, index) => (
+                      <tr key={item.productId || `item-${index}`}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="h-10 w-10 flex-shrink-0">
@@ -398,7 +449,38 @@ const EditOrder = () => {
                           <div className="text-sm text-gray-900">Rs. {item.price.toLocaleString()}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{item.quantity}</div>
+                          {canEdit ? (
+                            <div className="flex items-center">
+                              <button
+                                type="button"
+                                onClick={() => handleQuantityChange(index, item.quantity - 1)}
+                                className="text-gray-500 hover:text-gray-700"
+                                disabled={item.quantity <= 1}
+                              >
+                                <svg className="h-5 w-5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path d="M20 12H4"></path>
+                                </svg>
+                              </button>
+                              <input
+                                type="number"
+                                min="1"
+                                value={item.quantity}
+                                onChange={(e) => handleQuantityChange(index, e.target.value)}
+                                className="mx-2 w-16 text-center border-gray-300 rounded-md shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleQuantityChange(index, item.quantity + 1)}
+                                className="text-gray-500 hover:text-gray-700"
+                              >
+                                <svg className="h-5 w-5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path d="M12 4v16m8-8H4"></path>
+                                </svg>
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-900">{item.quantity}</div>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">Rs. {item.subtotal.toLocaleString()}</div>
@@ -426,26 +508,7 @@ const EditOrder = () => {
               </div>
             </div>
 
-            {/* Additional Information */}
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold text-gray-700 mb-2">Additional Information</h2>
-              <div>
-                <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-                  Order Notes
-                </label>
-                <textarea
-                  id="notes"
-                  name="notes"
-                  rows="3"
-                  value={orderData.notes || ''}
-                  onChange={handleInputChange}
-                  placeholder="Special instructions for delivery or any other notes"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50"
-                ></textarea>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-end space-x-3 mt-6">
               <button
                 type="button"
                 onClick={() => navigate(`/orders/${id}`)}
@@ -455,8 +518,8 @@ const EditOrder = () => {
               </button>
               <button
                 type="submit"
-                disabled={submitting}
-                className={`px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${submitting ? 'opacity-75 cursor-not-allowed' : ''}`}
+                disabled={submitting || !canEdit}
+                className={`px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${(!canEdit || submitting) ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {submitting ? (
                   <span className="flex items-center">
