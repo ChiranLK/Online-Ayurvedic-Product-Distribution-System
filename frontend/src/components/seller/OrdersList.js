@@ -1,21 +1,20 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../config/api';
-import { AuthContext } from '../../context/AuthContext';
 
 const SellerOrdersList = () => {
-  const navigate = useNavigate();
-  const context = useContext(AuthContext);
-  const { currentUser } = context || { currentUser: null };
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('');
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
+  const [statusUpdateMessage, setStatusUpdateMessage] = useState({ type: '', message: '' });
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         const response = await api.get('/api/seller-orders/my-orders');
+        console.log('Orders data:', response.data);
         setOrders(response.data.data || []);
         setLoading(false);
       } catch (err) {
@@ -55,12 +54,85 @@ const SellerOrdersList = () => {
         return 'bg-yellow-100 text-yellow-800';
       case 'Processing':
         return 'bg-blue-100 text-blue-800';
+      case 'Shipped':
+        return 'bg-purple-100 text-purple-800';
       case 'Delivered':
         return 'bg-green-100 text-green-800';
       case 'Cancelled':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+  
+  // Handle order status update
+  const handleStatusUpdate = async (orderId, newStatus) => {
+    setUpdatingOrderId(orderId);
+    setStatusUpdateMessage({ type: '', message: '' });
+    
+    try {
+      console.log(`Attempting to update order ${orderId} to status: ${newStatus}`);
+      
+      // Update the order status via the API
+      const statusResponse = await api.put(`/api/orders/${orderId}/status`, { status: newStatus });
+      console.log('Status update response:', statusResponse.data);
+      
+      try {
+        // Add a history note - wrapped in separate try/catch to continue even if this fails
+        const historyResponse = await api.post(`/api/orders/${orderId}/history`, { 
+          status: newStatus,
+          note: `Status updated to ${newStatus} by seller from orders list`
+        });
+        console.log('History update response:', historyResponse.data);
+      } catch (historyErr) {
+        console.error('History update failed but status was updated:', historyErr);
+        // Continue execution since the main status update succeeded
+      }
+      
+      // Update the local state to reflect the change
+      setOrders(orders.map(order => 
+        order._id === orderId ? { ...order, status: newStatus } : order
+      ));
+      
+      setStatusUpdateMessage({
+        type: 'success',
+        message: `Order ${orderId.substring(0, 8)} updated to ${newStatus}`
+      });
+      
+      // Clear success message after a few seconds
+      setTimeout(() => {
+        setStatusUpdateMessage({ type: '', message: '' });
+      }, 3000);
+    } catch (err) {
+      console.error('Error updating order status:', err);
+      console.error('Error details:', err.response?.data);
+      
+      // More descriptive error message based on the error type
+      let errorMessage = 'Failed to update order: ';
+      
+      if (err.response) {
+        // The request was made and the server responded with an error status
+        errorMessage += err.response.data?.message || `Server error (${err.response.status})`;
+        
+        if (err.response.status === 403) {
+          errorMessage = 'Access denied. You may not have permission to update this order.';
+        } else if (err.response.status === 404) {
+          errorMessage = 'Order not found. It may have been deleted.';
+        }
+      } else if (err.request) {
+        // The request was made but no response was received
+        errorMessage += 'Network error - please check your connection and try again';
+      } else {
+        // Something happened in setting up the request
+        errorMessage += err.message;
+      }
+      
+      setStatusUpdateMessage({
+        type: 'error',
+        message: errorMessage
+      });
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
@@ -93,11 +165,18 @@ const SellerOrdersList = () => {
             <option value="">All Statuses</option>
             <option value="Pending">Pending</option>
             <option value="Processing">Processing</option>
+            <option value="Shipped">Shipped</option>
             <option value="Delivered">Delivered</option>
             <option value="Cancelled">Cancelled</option>
           </select>
         </div>
       </div>
+      
+      {statusUpdateMessage.message && (
+        <div className={`mb-4 p-3 rounded ${statusUpdateMessage.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+          {statusUpdateMessage.message}
+        </div>
+      )}
 
       {filteredOrders.length === 0 ? (
         <div className="text-center p-6 bg-gray-50 rounded-lg">
@@ -168,15 +247,30 @@ const SellerOrdersList = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Link to={`/seller/orders/${order._id}`} className="text-blue-600 hover:text-blue-900 mr-4">
-                      View
-                    </Link>
-                    <button
-                      className="text-green-600 hover:text-green-900"
-                      onClick={() => navigate(`/seller/orders/${order._id}/update`)}
-                    >
-                      Update Status
-                    </button>
+                    <div className="flex items-center space-x-3">
+                      <Link to={`/seller/orders/${order._id}`} className="text-blue-600 hover:text-blue-900">
+                        View Details
+                      </Link>
+                      <div className="flex items-center">
+                        <select
+                          disabled={updatingOrderId === order._id}
+                          value={order.status || ""}
+                          onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                          className="text-sm border border-gray-300 rounded py-1 px-2 focus:outline-none focus:ring-1 focus:ring-green-500"
+                        >
+                          <option value="Pending">Pending</option>
+                          <option value="Processing">Processing</option>
+                          <option value="Shipped">Shipped</option>
+                          <option value="Delivered">Delivered</option>
+                          <option value="Cancelled">Cancelled</option>
+                        </select>
+                        {updatingOrderId === order._id && (
+                          <div className="ml-2">
+                            <div className="animate-spin h-4 w-4 border-t-2 border-b-2 border-green-500 rounded-full"></div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ))}

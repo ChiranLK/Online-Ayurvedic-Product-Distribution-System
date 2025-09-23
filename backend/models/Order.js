@@ -54,7 +54,21 @@ const orderSchema = new mongoose.Schema({
     type: String,
     enum: ['cod', 'card'],
     default: 'cod'
-  }
+  },
+  history: [{
+    date: {
+      type: Date,
+      default: Date.now
+    },
+    status: {
+      type: String,
+      enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
+      required: true
+    },
+    note: {
+      type: String
+    }
+  }]
 }, {
   timestamps: true
 });

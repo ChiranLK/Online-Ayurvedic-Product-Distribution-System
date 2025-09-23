@@ -17,6 +17,7 @@ import EditProduct from './components/products/EditProduct';
 // Order Components
 import OrdersList from './components/orders/OrdersList';
 import OrderDetail from './components/orders/OrderDetail';
+import EditOrder from './components/orders/EditOrder';
 
 // Customer Components
 import CustomerDetail from './components/customers/CustomerDetail';
@@ -51,6 +52,8 @@ import SellerAddProduct from './components/seller/AddProduct';
 import SellerEditProduct from './components/seller/EditProduct';
 import SellerInventory from './components/seller/Inventory';
 import SellerOrdersList from './components/seller/OrdersList';
+import SellerOrderDetail from './components/seller/SellerOrderDetail';
+import UpdateOrderStatus from './components/seller/UpdateOrderStatus';
 
 // Admin Components
 import AdminDashboard from './components/dashboard/AdminDashboard';
@@ -255,7 +258,8 @@ function App() {
               <Route path="/seller/products/:id" element={<ProductDetail />} />
               <Route path="/seller/inventory" element={<SellerInventory />} />
               <Route path="/seller/orders" element={<SellerOrdersList />} />
-              <Route path="/seller/orders/:id" element={<OrderDetail />} />
+              <Route path="/seller/orders/:id" element={<SellerOrderDetail />} />
+              <Route path="/seller/orders/:id/update" element={<UpdateOrderStatus />} />
             </Route>
             
             {/* Customer Routes */}
@@ -282,6 +286,11 @@ function App() {
             {/* Public Blog Routes */}
             <Route path="/blog" element={<BlogList />} />
             <Route path="/blog/:id" element={<BlogDetail />} />
+            
+            {/* Order Edit Route - accessible by authenticated users */}
+            <Route element={<PrivateRoute allowedRoles={['admin', 'seller', 'customer']} />}>
+              <Route path="/orders/edit/:id" element={<EditOrder />} />
+            </Route>
             
             {/* Dashboard route for any authenticated user */}
             <Route element={<PrivateRoute allowedRoles={['admin', 'seller', 'customer']} />}>

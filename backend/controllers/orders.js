@@ -6,7 +6,7 @@ const Product = require('../models/Product');
 // @access  Private/Customer
 exports.createOrder = async (req, res) => {
   try {
-    const { items, shippingAddress, paymentMethod } = req.body;
+    const { items, deliveryAddress, paymentMethod } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'No order items' });
@@ -53,7 +53,7 @@ exports.createOrder = async (req, res) => {
     const order = await Order.create({
       customerId: req.user.id,
       items: orderItems,
-      deliveryAddress: shippingAddress,
+      deliveryAddress: deliveryAddress,
       paymentMethod,
       totalAmount: totalPrice,
       status: 'Pending'
@@ -184,6 +184,104 @@ exports.updateOrderStatus = async (req, res) => {
     });
   } catch (error) {
     console.error('Update order status error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Update order (by customer)
+// @route   PUT /api/orders/:id
+// @access  Private/Customer
+exports.updateOrder = async (req, res) => {
+  try {
+    const { shippingAddress, notes, items } = req.body;
+    
+    const order = await Order.findById(req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    
+    // Check permissions - only customer who placed the order can update it
+    if (order.customerId.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Access denied - you can only update your own orders' });
+    }
+    
+    // Check order status - can only update orders with status Pending or Processing
+    if (!['Pending', 'Processing'].includes(order.status)) {
+      return res.status(400).json({ 
+        message: `Orders with status "${order.status}" cannot be edited` 
+      });
+    }
+    
+    // Update allowed fields
+    if (shippingAddress) order.shippingAddress = shippingAddress;
+    if (notes) order.notes = notes;
+    
+    // Update items quantities if provided
+    if (items && items.length > 0) {
+      // Validate all items exist in the original order
+      for (const item of items) {
+        const orderItem = order.items.find(
+          oi => oi.productId.toString() === item.productId
+        );
+        
+        if (!orderItem) {
+          return res.status(400).json({ 
+            message: `Item with ID ${item.productId} not found in original order` 
+          });
+        }
+        
+        // Calculate quantity difference and check stock
+        const qtyDiff = item.quantity - orderItem.quantity;
+        
+        if (qtyDiff > 0) {
+          // Customer wants to increase quantity, check product stock
+          const product = await Product.findById(item.productId);
+          if (!product || product.stock < qtyDiff) {
+            return res.status(400).json({ 
+              message: `Insufficient stock for product ID: ${item.productId}` 
+            });
+          }
+          
+          // Update product stock
+          product.stock -= qtyDiff;
+          await product.save();
+        } else if (qtyDiff < 0) {
+          // Customer wants to decrease quantity, return stock
+          const product = await Product.findById(item.productId);
+          if (product) {
+            product.stock += Math.abs(qtyDiff);
+            await product.save();
+          }
+        }
+        
+        // Update quantity in the order
+        orderItem.quantity = item.quantity;
+        // Recalculate subtotal
+        orderItem.subtotal = orderItem.price * item.quantity;
+      }
+      
+      // Recalculate order total
+      order.totalAmount = order.items.reduce(
+        (sum, item) => sum + (item.price * item.quantity), 0
+      );
+    }
+    
+    // Add history record for this update
+    order.history.push({
+      date: new Date(),
+      status: order.status,
+      note: 'Order updated by customer'
+    });
+    
+    await order.save();
+    
+    res.status(200).json({
+      success: true,
+      data: order
+    });
+  } catch (error) {
+    console.error('Update order error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

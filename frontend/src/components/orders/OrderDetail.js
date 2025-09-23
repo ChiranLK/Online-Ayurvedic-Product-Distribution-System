@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import api from '../../config/api';
 
 const OrderDetail = () => {
   const { id } = useParams();
@@ -7,75 +8,160 @@ const OrderDetail = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  // For status update
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [newStatus, setNewStatus] = useState('');
-
+  
+  // Fetch order details when component mounts
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
-        // In a real app, fetch from API
-        // const response = await axios.get(`http://localhost:5000/api/orders/${id}`);
-        // setOrder(response.data);
+        setLoading(true);
         
-        // Mock data
-        const mockOrder = {
-          _id: id,
-          orderNumber: 'ORD-2023-' + id,
-          customerId: '1',
-          customerName: 'Kamal Perera',
-          customerEmail: 'kamal@example.com',
-          customerPhone: '0771234567',
-          shippingAddress: '456 Beach Road, Colombo 03, Sri Lanka',
-          billingAddress: '456 Beach Road, Colombo 03, Sri Lanka',
-          orderDate: '2023-10-15T08:30:00.000Z',
-          status: 'Delivered',
-          paymentMethod: 'Credit Card',
-          paymentStatus: 'Paid',
-          totalAmount: 12500,
-          shippingFee: 500,
-          discount: 1000,
-          tax: 1500,
-          items: [
-            {
-              productId: '1',
-              productName: 'Ashwagandha Powder',
-              quantity: 2,
-              price: 2500,
-              subtotal: 5000,
-              image: 'https://images.unsplash.com/photo-1626198226928-99ef1ba1d285?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'
-            },
-            {
-              productId: '3',
-              productName: 'Turmeric Capsules',
-              quantity: 3,
-              price: 1500,
-              subtotal: 4500,
-              image: 'https://images.unsplash.com/photo-1626198138066-7891428d1a74?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'
-            },
-            {
-              productId: '5',
-              productName: 'Aloe Vera Gel',
-              quantity: 1,
-              price: 2000,
-              subtotal: 2000,
-              image: 'https://images.unsplash.com/photo-1596046611348-7db3c12eac56?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'
-            }
+        const response = await api.get(`/api/orders/${id}`);
+        
+        
+        console.log('Order API response:', response);
+        
+        
+        const orderData = response.data.data || response.data;
+        
+        
+        console.log('Extracted order data:', orderData);
+        
+        if (!orderData) {
+          throw new Error('Order not found');
+        }
+        
+        const populatedCustomer = orderData.customerId && typeof orderData.customerId === 'object' 
+          ? orderData.customerId 
+          : null;
+          
+        console.log('Populated customer data:', populatedCustomer);
+        
+        let formattedOrder = {
+          ...orderData,
+          // Ensure all required fields exist with default values if not present
+          orderNumber: orderData.orderNumber || `ORD-${id.substring(0, 8).toUpperCase()}`,
+          orderDate: orderData.orderDate || orderData.createdAt || new Date().toISOString(),
+          status: orderData.status || 'Pending',
+          paymentStatus: orderData.paymentStatus || 'Unknown',
+          paymentMethod: orderData.paymentMethod || 'Unknown',
+          shippingAddress: orderData.shippingAddress || orderData.deliveryAddress || 'Not provided',
+          shippingFee: orderData.shippingFee || 0,
+          tax: orderData.tax || 0,
+          discount: orderData.discount || 0,
+          notes: orderData.notes || '',
+          history: orderData.history || [
+            { date: orderData.createdAt || orderData.orderDate || new Date().toISOString(), status: orderData.status || 'Pending', note: 'Order placed' }
           ],
-          notes: 'Please deliver during work hours (9 AM - 5 PM)',
-          trackingNumber: 'SLT12345678',
-          deliveryDate: '2023-10-18T14:20:00.000Z',
-          history: [
-            { date: '2023-10-15T08:30:00.000Z', status: 'Pending', note: 'Order placed' },
-            { date: '2023-10-15T10:45:00.000Z', status: 'Processing', note: 'Payment confirmed' },
-            { date: '2023-10-16T09:15:00.000Z', status: 'Shipped', note: 'Order has been shipped' },
-            { date: '2023-10-18T14:20:00.000Z', status: 'Delivered', note: 'Order has been delivered' }
-          ]
+          
+          // Extract customer info from populated data if available
+          customerName: populatedCustomer?.name || orderData.customerName || 'Customer',
+          customerEmail: populatedCustomer?.email || orderData.customerEmail || '',
+          customerPhone: populatedCustomer?.phone || orderData.customerPhone || '',
+          
+          // Store the customer object for reference
+          customer: populatedCustomer || null
         };
         
-        setOrder(mockOrder);
-        setNewStatus(mockOrder.status);
+        // Try to get customer details - first directly from the order if available
+        let customerInfo = {
+          customerName: orderData.customerName || 'Customer',
+          customerEmail: orderData.customerEmail || '',
+          customerPhone: orderData.customerPhone || ''
+        };
+        
+        // Check if there's a customer object directly in the order
+        if (orderData.customer && typeof orderData.customer === 'object') {
+          console.log('Customer data found directly in order:', orderData.customer);
+          customerInfo = {
+            customerName: orderData.customer.name || customerInfo.customerName,
+            customerEmail: orderData.customer.email || customerInfo.customerEmail,
+            customerPhone: orderData.customer.phone || customerInfo.customerPhone,
+            customerId: orderData.customer._id || orderData.customerId
+          };
+        } 
+        // If no embedded customer object, try to fetch from API if we have an ID
+        else if (orderData.customerId && typeof orderData.customerId === 'string') {
+          try {
+            console.log(`Fetching customer data for ID: ${orderData.customerId}`);
+            const customerResponse = await api.get(`/api/customers/${orderData.customerId}`);
+            console.log('Customer API response:', customerResponse);
+            
+            const customerData = customerResponse.data.data || customerResponse.data;
+            if (customerData) {
+              customerInfo = {
+                customerName: customerData.name || customerInfo.customerName,
+                customerEmail: customerData.email || customerInfo.customerEmail,
+                customerPhone: customerData.phone || customerInfo.customerPhone,
+                customerId: orderData.customerId
+              };
+              console.log('Updated customer info from API:', customerInfo);
+            }
+          } catch (customerErr) {
+            console.warn('Could not fetch customer details:', customerErr);
+          }
+        } else {
+          console.warn('No valid customer data or ID found in order:', orderData);
+        }
+        
+        // Update formattedOrder with customer info
+        formattedOrder = {
+          ...formattedOrder,
+          ...customerInfo
+        };
+        
+        // Process order items and extract product details from populated data
+        const processedItems = orderData.items.map((item, index) => {
+          // Debug log the original item
+          console.log(`Processing order item ${index}:`, item);
+          
+          // Check for populated product data
+          const populatedProduct = item.productId && typeof item.productId === 'object' 
+            ? item.productId 
+            : null;
+          
+          console.log(`Populated product data for item ${index}:`, populatedProduct);
+          
+          // Initialize with default values
+          let productName = item.name || 'Unknown Product';
+          let imageUrl = null;
+          let productDetails = {};
+          
+          // Extract data from populated product if available
+          if (populatedProduct) {
+            productName = populatedProduct.name || productName;
+            imageUrl = populatedProduct.image || populatedProduct.imageUrl || null;
+            productDetails = populatedProduct;
+          }
+          
+          // Use any available image URL or use fallbacks
+          const finalImageUrl = imageUrl || 
+                              item.imageUrl || 
+                              item.image || 
+                              '/images/product-placeholder.jpg';
+                              
+          console.log(`Final image URL for ${productName}:`, finalImageUrl);
+          
+          // Format seller info if available
+          const populatedSeller = item.sellerId && typeof item.sellerId === 'object' 
+            ? item.sellerId 
+            : null;
+            
+          console.log(`Populated seller data for item ${index}:`, populatedSeller);
+          
+          return {
+            ...item,
+            productName,
+            subtotal: item.price * item.quantity,
+            image: finalImageUrl,
+            productDetails,
+            sellerName: populatedSeller?.name || null
+          };
+        });
+        
+        // Update the formatted order with processed items
+        formattedOrder.items = processedItems;
+        
+        setOrder(formattedOrder);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching order details:', err);
@@ -87,45 +173,13 @@ const OrderDetail = () => {
     fetchOrderDetails();
   }, [id]);
 
-  const handleUpdateStatus = async () => {
-    if (order.status === newStatus) return;
-    
-    setIsUpdating(true);
-    try {
-      // In a real app, update via API
-      // await axios.put(`http://localhost:5000/api/orders/${id}/status`, { status: newStatus });
-      
-      // Simulate API call
-      console.log(`Updating order ${id} status to: ${newStatus}`);
-      
-      // Update local state
-      setOrder({
-        ...order,
-        status: newStatus,
-        history: [
-          ...order.history,
-          { date: new Date().toISOString(), status: newStatus, note: `Status updated to ${newStatus}` }
-        ]
-      });
-      
-      // Simulate successful API call
-      setTimeout(() => {
-        setIsUpdating(false);
-      }, 1000);
-    } catch (err) {
-      console.error('Error updating order status:', err);
-      setError('Failed to update order status. Please try again later.');
-      setIsUpdating(false);
-    }
-  };
-
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
       try {
-        // In a real app, delete via API
-        // await axios.delete(`http://localhost:5000/api/orders/${id}`);
+        // Delete the order through the API
+        await api.delete(`/api/orders/${id}`);
         
-        console.log(`Deleting order with ID: ${id}`);
+        // On success, redirect to orders list
         navigate('/orders');
       } catch (err) {
         console.error('Error deleting order:', err);
@@ -191,6 +245,10 @@ const OrderDetail = () => {
 
   // Payment status badge color
   const getPaymentStatusColor = (status) => {
+    if (!status) {
+      return 'bg-gray-100 text-gray-800'; // Default style if status is undefined
+    }
+    
     switch (status.toLowerCase()) {
       case 'paid':
         return 'bg-green-100 text-green-800';
@@ -242,6 +300,9 @@ const OrderDetail = () => {
                 <Link
                   to={`/orders/edit/${id}`}
                   className="flex items-center text-blue-600 hover:text-blue-800"
+                  onClick={(e) => {
+                    console.log('Edit link clicked for order', id);
+                  }}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
@@ -262,41 +323,7 @@ const OrderDetail = () => {
             </div>
           </div>
 
-          {/* Order Status Update */}
-          <div className="bg-gray-50 p-4 rounded-lg mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">Update Order Status</h2>
-            <div className="flex flex-wrap items-center">
-              <select
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value)}
-                className="rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring focus:ring-green-500 focus:ring-opacity-50 mr-3"
-                disabled={isUpdating}
-              >
-                <option value="Pending">Pending</option>
-                <option value="Processing">Processing</option>
-                <option value="Shipped">Shipped</option>
-                <option value="Delivered">Delivered</option>
-                <option value="Cancelled">Cancelled</option>
-                <option value="Returned">Returned</option>
-              </select>
-              
-              <button
-                onClick={handleUpdateStatus}
-                disabled={isUpdating || order.status === newStatus}
-                className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${(isUpdating || order.status === newStatus) ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {isUpdating ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Updating...
-                  </span>
-                ) : 'Update Status'}
-              </button>
-            </div>
-          </div>
+          {/* Order Status Update section removed */}
 
           {/* Order Details Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -304,17 +331,18 @@ const OrderDetail = () => {
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="text-lg font-semibold mb-3">Customer Information</h3>
               <div className="space-y-2">
-                <p><span className="font-medium">Name:</span> {order.customerName}</p>
-                <p><span className="font-medium">Email:</span> {order.customerEmail}</p>
-                <p><span className="font-medium">Phone:</span> {order.customerPhone}</p>
-                <div className="pt-2">
-                  <Link
-                    to={`/customers/${order.customerId}`}
-                    className="text-green-600 hover:text-green-800 text-sm"
-                  >
-                    View Customer Profile
-                  </Link>
-                </div>
+                <p>
+                  <span className="font-medium">Name:</span>{' '}
+                  {order.customerName || order.customer?.name || 'N/A'}
+                </p>
+                <p>
+                  <span className="font-medium">Email:</span>{' '}
+                  {order.customerEmail || order.customer?.email || 'N/A'}
+                </p>
+                <p>
+                  <span className="font-medium">Phone:</span>{' '}
+                  {order.customerPhone || order.customer?.phone || 'N/A'}
+                </p>
               </div>
             </div>
 
@@ -322,7 +350,7 @@ const OrderDetail = () => {
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="text-lg font-semibold mb-3">Shipping Information</h3>
               <div className="space-y-2">
-                <p><span className="font-medium">Address:</span> {order.shippingAddress}</p>
+                <p><span className="font-medium">Address:</span> {order.shippingAddress || order.deliveryAddress || 'Not provided'}</p>
                 <p><span className="font-medium">Tracking Number:</span> {order.trackingNumber || 'Not available'}</p>
                 <p>
                   <span className="font-medium">Delivery Date:</span> {' '}
@@ -342,16 +370,29 @@ const OrderDetail = () => {
                 <p>
                   <span className="font-medium">Status:</span>{' '}
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusColor(order.paymentStatus)}`}>
-                    {order.paymentStatus}
+                    {order.paymentStatus || 'Unknown'}
                   </span>
                 </p>
                 <p className="font-medium pt-2">Price Breakdown:</p>
                 <div className="pl-2 space-y-1">
-                  <p className="text-sm">Subtotal: LKR {(order.totalAmount - order.shippingFee - order.tax + order.discount).toLocaleString()}</p>
-                  <p className="text-sm">Shipping: LKR {order.shippingFee.toLocaleString()}</p>
-                  <p className="text-sm">Tax: LKR {order.tax.toLocaleString()}</p>
-                  <p className="text-sm">Discount: -LKR {order.discount.toLocaleString()}</p>
-                  <p className="font-medium pt-1">Total: LKR {order.totalAmount.toLocaleString()}</p>
+                    <p className="text-sm">
+                    Subtotal: LKR {(order.totalAmount - 
+                      (order.shippingFee || 0) - 
+                      (order.tax || 0) + 
+                      (order.discount || 0)).toLocaleString()}
+                  </p>
+                  <p className="text-sm">
+                    Shipping: LKR {order.shippingFee ? order.shippingFee.toLocaleString() : '0'}
+                  </p>
+                  <p className="text-sm">
+                    Tax: LKR {order.tax ? order.tax.toLocaleString() : '0'}
+                  </p>
+                  <p className="text-sm">
+                    Discount: -LKR {order.discount ? order.discount.toLocaleString() : '0'}
+                  </p>
+                  <p className="font-medium pt-1">
+                    Total: LKR {order.totalAmount ? order.totalAmount.toLocaleString() : '0'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -372,34 +413,54 @@ const OrderDetail = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {order.items.map((item) => (
-                    <tr key={item.productId}>
+                  {order.items.map((item, index) => (
+                    <tr key={typeof item.productId === 'string' ? item.productId : `item-${index}`}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="h-10 w-10 flex-shrink-0">
-                            <img className="h-10 w-10 rounded object-cover" src={item.image} alt={item.productName} />
+                            <img 
+                              className="h-10 w-10 rounded object-cover" 
+                              src={item.image || '/images/product-placeholder.jpg'} 
+                              alt={item.productName}
+                              onError={(e) => {
+                                console.log('Image failed to load:', e.target.src);
+                                e.target.onerror = null;
+                                e.target.src = '/images/product-placeholder.jpg';
+                              }}
+                            />
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">{item.productName}</div>
+                            {item.sellerId && (
+                              <div className="text-xs text-gray-500">Seller ID: {item.sellerId}</div>
+                            )}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">LKR {item.price.toLocaleString()}</div>
+                        <div className="text-sm text-gray-900">
+                          LKR {item.price ? item.price.toLocaleString() : '0'}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{item.quantity}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">LKR {item.subtotal.toLocaleString()}</div>
+                        <div className="text-sm text-gray-900">
+                          LKR {item.subtotal ? item.subtotal.toLocaleString() : '0'}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <Link 
-                          to={`/products/${item.productId}`}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          View Product
-                        </Link>
+                        {typeof item.productId === 'string' ? (
+                          <Link 
+                            to={`/products/${item.productId}`}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            View Product
+                          </Link>
+                        ) : (
+                          <span className="text-gray-500">Product Details Unavailable</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -407,7 +468,9 @@ const OrderDetail = () => {
                 <tfoot>
                   <tr className="bg-gray-50">
                     <td colSpan="3" className="px-6 py-3 text-right font-medium">Total:</td>
-                    <td className="px-6 py-3 font-medium">LKR {order.totalAmount.toLocaleString()}</td>
+                    <td className="px-6 py-3 font-medium">
+                      LKR {order.totalAmount ? order.totalAmount.toLocaleString() : '0'}
+                    </td>
                     <td></td>
                   </tr>
                 </tfoot>

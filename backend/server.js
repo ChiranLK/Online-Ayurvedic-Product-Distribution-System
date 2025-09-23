@@ -9,6 +9,7 @@ const fs = require('fs');
 // Import routes
 const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const orderStatusRoutes = require('./routes/orderStatusRoutes');
 const customerRoutes = require('./routes/customerRoutes');
 const customerOrderRoutes = require('./routes/customerOrderRoutes');
 const sellerRoutes = require('./routes/sellerRoutes');
@@ -103,6 +104,8 @@ app.use(cors({
 // Import profile routes
 const profileRoutes = require('./routes/profile');
 const sellerStatsRoutes = require('./routes/sellerStats');
+const sellerDashboardRoutes = require('./routes/sellerDashboardRoutes');
+const testDataRoutes = require('./routes/testDataRoutes');
 const customerStatsRoutes = require('./routes/customerStats');
 const customerDashboardStatsRoutes = require('./routes/customerDashboardStats');
 const adminStatsRoutes = require('./routes/adminStats');
@@ -118,6 +121,7 @@ const appointmentRoutes = require('./routes/appointmentRoutes');
 // Routes
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/orders', orderStatusRoutes); // Add the order status routes under the same base path
 app.use('/api/customers', customerRoutes);
 app.use('/api/customers', customerOrderRoutes);
 app.use('/api/sellers', sellerRoutes);
@@ -127,6 +131,8 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/seller', sellerStatsRoutes);
+app.use('/api/seller/dashboard', sellerDashboardRoutes);
+app.use('/api/test-data', testDataRoutes);
 app.use('/api/customer', customerStatsRoutes);
 app.use('/api/customers', customerDashboardStatsRoutes);
 app.use('/api/admin/stats', adminStatsRoutes);  // Changed from /api/admin to /api/admin/stats for clarity
