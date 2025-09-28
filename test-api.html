@@ -62,9 +62,9 @@
                 html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
                 
                 if (data.mongodbConnected) {
-                    html += '<p style="color: green; font-weight: bold">✅ MongoDB Atlas is connected successfully!</p>';
+                    html += '<p style="color: green; font-weight: bold"> MongoDB Atlas is connected successfully!</p>';
                 } else {
-                    html += '<p style="color: red; font-weight: bold">❌ MongoDB Atlas connection failed!</p>';
+                    html += '<p style="color: red; font-weight: bold"> MongoDB Atlas connection failed!</p>';
                 }
                 
                 resultDiv.innerHTML = html;
