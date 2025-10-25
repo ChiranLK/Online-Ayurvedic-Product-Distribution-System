@@ -9,12 +9,12 @@ mongoose.connect(process.env.MONGODB_URI, {
     useUnifiedTopology: true
 })
 .then(() => {
-    console.log('✅ MongoDB Atlas connected successfully!');
+    console.log('MongoDB Atlas connected successfully!');
     console.log('Connection state:', mongoose.connection.readyState);
     console.log('Database name:', mongoose.connection.name);
     process.exit(0);
 })
 .catch(err => {
-    console.error('❌ MongoDB connection error:', err);
+    console.error('MongoDB connection error:', err);
     process.exit(1);
 });
